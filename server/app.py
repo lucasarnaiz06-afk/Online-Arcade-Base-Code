@@ -26,6 +26,7 @@ def load_user(user_id):
 
 @app.route('/')
 def home():
+    print("home")
     return render_template('index.html')
 
 if __name__ == '__main__':
