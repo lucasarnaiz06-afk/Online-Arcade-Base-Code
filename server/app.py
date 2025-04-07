@@ -1,9 +1,10 @@
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import *
+from flask_mail import Mail, Message
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, datetime, secrets
+import os, datetime
 
 load_dotenv()
 
@@ -13,6 +14,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+mail = Mail(app)
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +36,12 @@ def load_user(user_id):
 def home():
     print("b")
     return render_template('index.html')
+
+def send_email(subject, recipients, text_body, html_body):
+     msg = Message(subject, sender=os.getenv('MAIL_USERNAME'), recipients=recipients)
+     msg.body = text_body
+     msg.html = html_body
+     mail.send(msg)
 
 if __name__ == '__main__':
     print("a")
