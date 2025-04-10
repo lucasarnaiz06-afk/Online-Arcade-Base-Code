@@ -51,7 +51,7 @@ def home():
     return render_template('index.html')
 
 @app.route('/login')
-def home():
+def login():
     print("Login")
     loginid = input()
     load_user(loginid)
