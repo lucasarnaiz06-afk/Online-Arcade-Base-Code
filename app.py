@@ -393,19 +393,19 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         
-        # Create sample games if none exist
+    
         if not Game.query.first():
             games = [
-                Game(name='Snake', description='Classic snake game. Eat food and grow longer without hitting walls or yourself!', 
-                     icon='snake.png', price=0),
-                Game(name='Tetris', description='Arrange falling blocks to create complete lines and score points.', 
-                     icon='tetris.png', price=50),
-                Game(name='Pacman', description='Navigate through a maze while collecting dots and avoiding ghosts.', 
-                     icon='pacman.png', price=75),
-                Game(name='Space Invaders', description='Defend Earth from alien invaders in this classic arcade shooter.', 
-                     icon='space_invaders.png', price=100)
+                # Game(name='Snake', description='Classic snake game. Eat food and grow longer without hitting walls or yourself!', 
+                #      icon='snake.png', price=0),
+                # Game(name='Tetris', description='Arrange falling blocks to create complete lines and score points.', 
+                #      icon='tetris.png', price=50),
+                # Game(name='Pacman', description='Navigate through a maze while collecting dots and avoiding ghosts.', 
+                #      icon='pacman.png', price=75),
+                # Game(name='Space Invaders', description='Defend Earth from alien invaders in this classic arcade shooter.', 
+                #      icon='space_invaders.png', price=100)
             ]
             db.session.add_all(games)
             db.session.commit()
     
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    app.run(debug=True, port=8000, host='0.0.0.0')
