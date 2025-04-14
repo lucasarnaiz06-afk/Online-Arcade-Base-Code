@@ -92,6 +92,7 @@ def send_email(subject, recipients, text_body, html_body):
 # Routes
 @app.route('/')
 def home():
+    print("home")
     games = Game.query.limit(4).all()  # Featured games
     return render_template('home.html', games=games)
 
