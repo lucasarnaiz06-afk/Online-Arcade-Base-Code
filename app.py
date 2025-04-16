@@ -277,7 +277,14 @@ def friends():
         status='pending'
     ).all()
     
-    return render_template('friends.html', friends=friends, pending_requests=pending_requests)
+    # Create a list of request senders
+    request_senders = []
+    for request in pending_requests:
+        request_senders.append(User.query.get(request.user_id))
+    
+    return render_template('friends.html', friends=friends, pending_requests=pending_requests, 
+                           request_senders=request_senders, User=User)
+
 
 @app.route('/add_friend', methods=['POST'])
 @login_required
