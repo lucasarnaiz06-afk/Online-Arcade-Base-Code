@@ -1,0 +1,122 @@
+settings-sidebar .list-group-item {
+    border-radius: 0;
+    border-left: 3px solid transparent;
+}
+
+.settings-sidebar .list-group-item.active {
+    border-left: 3px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.settings-sidebar .list-group-item:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Avatar upload */
+.avatar-container {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.avatar-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.avatar-container:hover .overlay {
+    opacity: 1;
+    cursor: pointer;
+}
+
+/* Password strength meter styling */
+meter {
+    width: 100%;
+    height: 10px;
+}
+
+meter::-webkit-meter-bar {
+    background: #f2f2f2;
+    border-radius: 3px;
+}
+
+meter::-webkit-meter-optimum-value {
+    background: #28a745;
+    border-radius: 3px;
+}
+
+meter::-webkit-meter-suboptimum-value {
+    background: #ffc107;
+    border-radius: 3px;
+}
+
+meter::-webkit-meter-even-less-good-value {
+    background: #dc3545;
+    border-radius: 3px;
+}
+
+/* Theme preview */
+.theme-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    margin-right: 10px;
+    display: inline-block;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.theme-preview:hover {
+    transform: scale(1.05);
+}
+
+.theme-light {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.theme-dark {
+    background-color: #343a40;
+    border: 1px solid #212529;
+}
+
+/* Accent color previews */
+.accent-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 5px;
+    display: inline-block;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.accent-color:hover {
+    transform: scale(1.1);
+}
+
+/* Tab transition animation */
+.tab-pane {
+    transition: opacity 0.3s;
+}
+
+.tab-pane.fade {
+    opacity: 0;
+}
+
+.tab-pane.show {
+    opacity: 1;
+}

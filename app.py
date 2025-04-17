@@ -7,12 +7,20 @@ from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
 import os, datetime
+from werkzeug.utils import secure_filename
+import json
+import os
+import secrets
+from PIL import Image
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/images/avatars')
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max upload
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -34,6 +42,11 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(300), nullable=False)
     coins = db.Column(db.Integer, default=100)
+    avatar = db.Column(db.String(100), default='default_avatar.png')
+    bio = db.Column(db.Text, nullable=True)
+    theme = db.Column(db.String(20), default='light')
+    accent_color = db.Column(db.String(20), default='blue')
+    notification_settings = db.Column(db.Text, default='{"email": ["friend_requests", "game_invites", "new_games", "leaderboard_updates"], "push": ["all"]}')
     games = db.relationship('UserGame', backref='user', lazy=True)
     scores = db.relationship('Score', backref='user', lazy=True)
     email_confirmed = db.Column(db.Boolean, default=False)
@@ -533,6 +546,231 @@ def reset_token(token):
         return redirect(url_for('login'))
     
     return render_template('reset_token.html')
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+def save_picture(form_picture):
+    # Generate a random filename to avoid collisions
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(app.config['UPLOAD_FOLDER'], picture_fn)
+    
+    # Resize image - optional, but helps save space and load time
+    output_size = (150, 150)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+    
+    # Create directories if they don't exist
+    os.makedirs(os.path.dirname(picture_path), exist_ok=True)
+    
+    # Save the picture
+    i.save(picture_path)
+    
+    return picture_fn
+
+@app.route('/settings')
+@login_required
+def settings():
+    # Pass the current time for displaying session info
+    current_time = datetime.datetime.now()
+    
+    # Load notification settings from JSON string to dict
+    if current_user.notification_settings:
+        try:
+            notifications = json.loads(current_user.notification_settings)
+        except:
+            notifications = {"email": [], "push": []}
+    else:
+        notifications = {"email": [], "push": []}
+    
+    return render_template('settings.html', current_time=current_time, notifications=notifications)
+
+@app.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile():
+    if request.method == 'POST':
+        # Validate username uniqueness if it's changed
+        new_username = request.form.get('username')
+        if new_username != current_user.username:
+            user_check = User.query.filter_by(username=new_username).first()
+            if user_check:
+                flash('Username already exists.', 'danger')
+                return redirect(url_for('settings'))
+        
+        # Validate email uniqueness if it's changed
+        new_email = request.form.get('email')
+        if new_email != current_user.email:
+            email_check = User.query.filter_by(email=new_email).first()
+            if email_check:
+                flash('Email already registered.', 'danger')
+                return redirect(url_for('settings'))
+            
+            # Email changed, need to verify again
+            current_user.email_confirmed = False
+            current_user.email = new_email
+            
+            # Send verification email
+            token = current_user.get_token()
+            verify_url = url_for('confirm_email', token=token, _external=True)
+            
+            html_body = f'''
+            <h2>Email Verification</h2>
+            <p>To verify your new email address, please click the link below:</p>
+            <p><a href="{verify_url}">Verify Email Address</a></p>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you did not make this change, please contact support immediately.</p>
+            '''
+            
+            text_body = f'''
+            Email Verification
+            
+            To verify your new email address, please click the link below:
+            
+            {verify_url}
+            
+            This link will expire in 24 hours.
+            
+            If you did not make this change, please contact support immediately.
+            '''
+            
+            email_sent = send_email('Verify Your Email Address', [new_email], text_body, html_body)
+            
+            if email_sent:
+                flash('Email updated! Please verify your new email address. Check your inbox.', 'warning')
+            else:
+                flash('Email updated but verification email could not be sent. Please contact support.', 'warning')
+        
+        # Update username
+        current_user.username = new_username
+        
+        # Update bio
+        current_user.bio = request.form.get('bio', '')
+        
+        # Handle profile picture upload
+        if 'avatar' in request.files:
+            avatar_file = request.files['avatar']
+            if avatar_file and avatar_file.filename:
+                if allowed_file(avatar_file.filename):
+                    # If user already has a custom avatar, delete it (unless it's the default)
+                    if current_user.avatar != 'default_avatar.png' and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], current_user.avatar)):
+                        try:
+                            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], current_user.avatar))
+                        except:
+                            pass  # We can continue even if deletion fails
+                    
+                    # Save the new picture
+                    picture_file = save_picture(avatar_file)
+                    current_user.avatar = picture_file
+                else:
+                    flash('Invalid file type. Please upload PNG, JPG, JPEG, or GIF files.', 'danger')
+                    return redirect(url_for('settings'))
+        
+        # Save all changes
+        db.session.commit()
+        flash('Your profile has been updated!', 'success')
+        return redirect(url_for('settings'))
+
+@app.route('/change_password', methods=['POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # Verify current password
+        if not check_password_hash(current_user.password, current_password):
+            flash('Current password is incorrect.', 'danger')
+            return redirect(url_for('settings'))
+        
+        # Verify new passwords match
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'danger')
+            return redirect(url_for('settings'))
+        
+        current_user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
+        db.session.commit()
+        
+        flash('Your password has been updated!', 'success')
+        return redirect(url_for('settings'))
+
+@app.route('/update_appearance', methods=['POST'])
+@login_required
+def update_appearance():
+    if request.method == 'POST':
+        theme = request.form.get('theme', 'light')
+        accent_color = request.form.get('accent_color', 'blue')
+        
+        current_user.theme = theme
+        current_user.accent_color = accent_color
+        db.session.commit()
+        
+        flash('Appearance settings saved!', 'success')
+        return redirect(url_for('settings'))
+
+@app.route('/update_notifications', methods=['POST'])
+@login_required
+def update_notifications():
+    if request.method == 'POST':
+        email_notifications = request.form.getlist('notifications[]')
+        push_notifications = request.form.getlist('push_notifications[]')
+        
+        notification_settings = {
+            'email': email_notifications,
+            'push': push_notifications
+        }
+        
+        current_user.notification_settings = json.dumps(notification_settings)
+        db.session.commit()
+        
+        flash('Notification settings updated!', 'success')
+        return redirect(url_for('settings'))
+
+@app.route('/logout_all', methods=['POST'])
+@login_required
+def logout_all():
+    # In a real application, you'd invalidate all sessions here
+    # For this example, we'll just log out the current user
+    logout_user()
+    flash('You have been logged out from all devices.', 'info')
+    return redirect(url_for('login'))
+
+@app.route('/delete_account', methods=['POST'])
+@login_required
+def delete_account():
+    password = request.form.get('password')
+    
+    # Verify password
+    if not check_password_hash(current_user.password, password):
+        flash('Password is incorrect.', 'danger')
+        return redirect(url_for('settings'))
+    
+    
+    user_id = current_user.id
+    
+    logout_user()
+    
+    # Delete user's data 
+    user = User.query.get(user_id)
+    
+    # Delete avatar if not default
+    if user.avatar != 'default_avatar.png':
+        avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], user.avatar)
+        try:
+            if os.path.exists(avatar_path):
+                os.remove(avatar_path)
+        except:
+            pass  # Continue even if file deletion fails
+    
+    # Delete user from database
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash('Your account has been permanently deleted.', 'info')
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     with app.app_context():
