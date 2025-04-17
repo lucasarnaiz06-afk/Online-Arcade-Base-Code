@@ -772,6 +772,36 @@ def delete_account():
     flash('Your account has been permanently deleted.', 'info')
     return redirect(url_for('home'))
 
+def ensure_avatar_directory_exists():
+    avatar_dir = os.path.join(app.root_path, 'static/images/avatars')
+    if not os.path.exists(avatar_dir):
+        os.makedirs(avatar_dir)
+
+def save_picture(form_picture):
+    # Generate a random filename to avoid collisions
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(app.config['UPLOAD_FOLDER'], picture_fn)
+    
+    # Resize image - optional, but helps save space and load time
+    output_size = (150, 150)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+    
+    # Create directories if they don't exist
+    ensure_avatar_directory_exists()
+    
+    i.save(picture_path)
+    
+    return picture_fn
+
+if __name__ == '__main__':
+    with app.app_context():
+        # Ensure avatar directory exists
+        ensure_avatar_directory_exists()
+        db.create_all()
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
