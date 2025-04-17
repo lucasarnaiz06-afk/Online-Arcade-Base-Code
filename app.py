@@ -23,6 +23,7 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 mail = Mail(app)
 
 # Models
@@ -35,19 +36,33 @@ class User(db.Model, UserMixin):
     coins = db.Column(db.Integer, default=100)
     games = db.relationship('UserGame', backref='user', lazy=True)
     scores = db.relationship('Score', backref='user', lazy=True)
-
+    email_confirmed = db.Column(db.Boolean, default=False)
+    
+    def get_token(self, expires_sec=1800):
+        s = Serializer(app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id}, salt='email-confirm')
+    
     def get_reset_token(self):
         s = Serializer(app.config['SECRET_KEY'])
-        return s.dumps({'user_id': self.id})
+        return s.dumps({'user_id': self.id}, salt='password-reset')
+    
+    @staticmethod
+    def verify_email_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, salt='email-confirm', max_age=86400)['user_id']  # 24 hours
+        except:
+            return None
+        return User.query.get(user_id)
     
     @staticmethod
     def verify_reset_token(token):
         s = Serializer(app.config['SECRET_KEY'])
         try:
-            user_id = s.loads(token, max_age=1800)['user_id']
+            user_id = s.loads(token, salt='password-reset', max_age=1800)['user_id']  # 30 minutes
         except:
             return None
-        return User.query.filter_by(id=user_id).first()
+        return User.query.get(user_id)
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -84,10 +99,15 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 def send_email(subject, recipients, text_body, html_body):
-    msg = Message(subject, sender=os.getenv('MAIL_USERNAME'), recipients=recipients)
-    msg.body = text_body
-    msg.html = html_body
-    mail.send(msg)
+    try:
+        msg = Message(subject, sender=app.config['MAIL_DEFAULT_SENDER'], recipients=recipients)
+        msg.body = text_body
+        msg.html = html_body
+        mail.send(msg)
+        return True
+    except Exception as e:
+        app.logger.error(f"Email sending failed: {e}")
+        return False
 
 # Routes
 @app.route('/')
@@ -111,7 +131,15 @@ def login():
         if not user or not check_password_hash(user.password, password):
             flash('Please check your login details and try again.', 'danger')
             return redirect(url_for('login'))
+        
+        if not user.email_confirmed:
+            flash('Please verify your email before logging in. Check your inbox for the verification link.', 'warning')
             
+            # Option to resend verification email
+            resend_url = url_for('resend_confirmation')
+            flash(f'If you did not receive the email, <a href="{resend_url}">click here to resend</a>.', 'info')
+            return redirect(url_for('login'))
+        
         login_user(user, remember=remember)
         next_page = request.args.get('next')
         return redirect(next_page) if next_page else redirect(url_for('profile'))
@@ -148,16 +176,113 @@ def register():
         new_user = User(
             username=username,
             email=email,
-            password=generate_password_hash(password, method='pbkdf2:sha256')
+            password=generate_password_hash(password, method='pbkdf2:sha256'),
+            email_confirmed=False
         )
         
         db.session.add(new_user)
         db.session.commit()
         
-        flash('Registration successful! You can now log in.', 'success')
+        # Generate token and send verification email
+        token = new_user.get_token()
+        verify_url = url_for('confirm_email', token=token, _external=True)
+        
+        html_body = f'''
+        <h2>Welcome to Online Arcade!</h2>
+        <p>Thank you for registering. To complete your registration and verify your email address, please click the link below:</p>
+        <p><a href="{verify_url}">Verify Email Address</a></p>
+        <p>This link will expire in 24 hours.</p>
+        <p>If you did not create an account, please ignore this email.</p>
+        '''
+        
+        text_body = f'''
+        Welcome to Online Arcade!
+        
+        Thank you for registering. To complete your registration and verify your email address, please click the link below:
+        
+        {verify_url}
+        
+        This link will expire in 24 hours.
+        
+        If you did not create an account, please ignore this email.
+        '''
+        
+        email_sent = send_email('Verify Your Email Address', [email], text_body, html_body)
+        
+        if email_sent:
+            flash('Your account has been created! Please check your email to verify your account.', 'success')
+        else:
+            flash('Your account has been created, but we could not send a verification email. Please contact support.', 'warning')
+            
         return redirect(url_for('login'))
     
     return render_template('register.html')
+
+# New route for email confirmation
+@app.route('/confirm_email/<token>')
+def confirm_email(token):
+    user = User.verify_email_token(token)
+    
+    if not user:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+        return redirect(url_for('login'))
+        
+    if user.email_confirmed:
+        flash('Your email has already been verified. Please login.', 'info')
+        return redirect(url_for('login'))
+        
+    user.email_confirmed = True
+    db.session.commit()
+    
+    flash('Your email has been verified! You can now log in.', 'success')
+    return redirect(url_for('login'))
+
+@app.route('/resend_confirmation', methods=['GET', 'POST'])
+def resend_confirmation():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        
+        if user and not user.email_confirmed:
+            token = user.get_token()
+            verify_url = url_for('confirm_email', token=token, _external=True)
+            
+            html_body = f'''
+            <h2>Email Verification</h2>
+            <p>To verify your email address, please click the link below:</p>
+            <p><a href="{verify_url}">Verify Email Address</a></p>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you did not create an account, please ignore this email.</p>
+            '''
+            
+            text_body = f'''
+            Email Verification
+            
+            To verify your email address, please click the link below:
+            
+            {verify_url}
+            
+            This link will expire in 24 hours.
+            
+            If you did not create an account, please ignore this email.
+            '''
+            
+            email_sent = send_email('Verify Your Email Address', [email], text_body, html_body)
+            
+            if email_sent:
+                flash('A new verification email has been sent. Please check your inbox.', 'success')
+            else:
+                flash('We could not send a verification email. Please try again later.', 'danger')
+        else:
+            # Don't reveal if email exists for security
+            flash('If this email is registered and not verified, a new verification link has been sent.', 'info')
+            
+        return redirect(url_for('login'))
+    
+    return render_template('resend_confirmation.html')
 
 @app.route('/logout')
 @login_required
@@ -353,19 +478,31 @@ def reset_request():
             reset_url = url_for('reset_token', token=token, _external=True)
             
             html_body = f'''
-            <p>To reset your password, please visit the following link:</p>
+            <h2>Password Reset Request</h2>
+            <p>To reset your password, please click the link below:</p>
             <p><a href="{reset_url}">Reset Password</a></p>
-            <p>If you did not make this request, please ignore this email.</p>
+            <p>This link will expire in 30 minutes.</p>
+            <p>If you did not make this request, please ignore this email and your password will remain unchanged.</p>
             '''
             
             text_body = f'''
-            To reset your password, please visit the following link:
+            Password Reset Request
+            
+            To reset your password, please click the link below:
+            
             {reset_url}
-            If you did not make this request, please ignore this email.
+            
+            This link will expire in 30 minutes.
+            
+            If you did not make this request, please ignore this email and your password will remain unchanged.
             '''
             
-            send_email('Password Reset Request', [email], text_body, html_body)
+            email_sent = send_email('Password Reset Request', [email], text_body, html_body)
+            
+            if not email_sent:
+                app.logger.error(f"Failed to send password reset email to {email}")
         
+        # Don't reveal if email exists for security
         flash('If an account with that email exists, we\'ve sent instructions to reset your password.', 'info')
         return redirect(url_for('login'))
     
