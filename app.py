@@ -357,7 +357,7 @@ def reset_request():
             <p><a href="{reset_url}">Reset Password</a></p>
             <p>If you did not make this request, please ignore this email.</p>
             '''
-            
+                
             text_body = f'''
             To reset your password, please visit the following link:
             {reset_url}
