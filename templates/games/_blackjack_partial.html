@@ -1,0 +1,59 @@
+<h1 class="mb-4">♠ Blackjack ♥</h1>
+
+{% if not player %}
+  <form method="POST" class="text-center">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="bet" class="form-label">Enter your bet (you have {{ current_user.coins }} coins):</label>
+    <input type="number" name="bet" class="form-control text-center" required min="1" max="{{ current_user.coins }}">
+    <button type="submit" class="btn btn-success mt-3">Start Game</button>
+  </form>
+{% else %}
+  <div class="text-center mb-4">
+    <h3>Your Hand — Total: {{ score }}</h3>
+    <div class="card-row" id="player-hand">
+      {% for card in player %}
+        {% set rank = 'A' if card == 1 else card %}
+        {% set suit = ['♠','♥','♦','♣'][loop.index0 % 4] %}
+        {% set color_class = 'red' if suit in ['♥','♦'] else '' %}
+        <div class="playing-card {{ color_class }} hidden">
+          <div class="top-left">{{ rank }}{{ suit }}</div>
+          <div class="center">{{ suit }}</div>
+          <div class="bottom-right">{{ rank }}{{ suit }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <h3>Dealer's Hand{% if game_over %} — Total: {{ dealer | sum }}{% endif %}</h3>
+    <div class="card-row" id="dealer-hand">
+      {% if game_over %}
+        {% for card in dealer %}
+          {% set rank = 'A' if card == 1 else card %}
+          {% set suit = ['♠','♥','♦','♣'][loop.index0 % 4] %}
+          {% set color_class = 'red' if suit in ['♥','♦'] else '' %}
+          <div class="playing-card {{ color_class }} hidden">
+            <div class="top-left">{{ rank }}{{ suit }}</div>
+            <div class="center">{{ suit }}</div>
+            <div class="bottom-right">{{ rank }}{{ suit }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="playing-card">
+          <div class="top-left">{{ dealer[0] }}♠</div>
+          <div class="center">♠</div>
+          <div class="bottom-right">{{ dealer[0] }}♠</div>
+        </div>
+        <div class="playing-card bg-secondary text-white">?</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="text-center btn-group">
+    {% if not game_over %}
+      <button class="btn btn-warning" id="hit-btn">Hit</button>
+      <button class="btn btn-primary" id="stand-btn">Stand</button>
+    {% else %}
+      <div class="alert alert-info">{{ message }}</div>
+      <a href="{{ url_for('blackjack', action='new') }}" class="btn btn-success">Play Again</a>
+    {% endif %}
+  </div>
+{% endif %}

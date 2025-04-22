@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blackjack</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .game-container {
+      max-width: 900px;
+      margin: 50px auto;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+    }
+
+    .playing-card {
+      width: 70px;
+      height: 100px;
+      background-color: white;
+      color: black;
+      border-radius: 8px;
+      font-size: 1.2em;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px;
+      margin: 5px;
+      position: relative;
+    }
+
+    .playing-card.red {
+      color: crimson;
+    }
+
+    .playing-card .top-left,
+    .playing-card .bottom-right {
+      position: absolute;
+      font-size: 0.8em;
+    }
+
+    .playing-card .top-left {
+      top: 4px;
+      left: 6px;
+    }
+
+    .playing-card .bottom-right {
+      bottom: 4px;
+      right: 6px;
+      transform: rotate(180deg);
+    }
+
+    .playing-card .center {
+      font-size: 1.6em;
+      margin-top: 18px;
+    }
+
+    .playing-card.hidden {
+      visibility: hidden;
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+
+    .playing-card.animated {
+      visibility: visible;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .card-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn-group {
+      margin-top: 20px;
+    }
+
+    .form-control {
+      max-width: 150px;
+      margin: 0 auto 10px;
+    }
+
+    h1, h3 {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  {% include 'navbar.html' %}
+  <div class="container game-container">
+    <h1 class="mb-4">♠ Blackjack ♥</h1>
+
+    {% if not player %}
+      <form method="POST" class="text-center">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="bet" class="form-label">Enter your bet (you have {{ current_user.coins }} coins):</label>
+        <input type="number" name="bet" class="form-control text-center" required min="1" max="{{ current_user.coins }}">
+        <button type="submit" class="btn btn-success mt-3">Start Game</button>
+      </form>
+    {% else %}
+      <div class="text-center mb-4">
+        <h3>Your Hand — Total: {{ score }}</h3>
+        <div class="card-row" id="player-hand">
+          {% for card in player %}
+            {% set rank = 'A' if card == 1 else card %}
+            {% set suit = ['♠','♥','♦','♣'][loop.index0 % 4] %}
+            {% set color_class = 'red' if suit in ['♥','♦'] else '' %}
+            <div class="playing-card {{ color_class }} hidden">
+              <div class="top-left">{{ rank }}{{ suit }}</div>
+              <div class="center">{{ suit }}</div>
+              <div class="bottom-right">{{ rank }}{{ suit }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <h3>Dealer's Hand{% if game_over %} — Total: {{ dealer | sum }}{% endif %}</h3>
+        <div class="card-row" id="dealer-hand">
+          {% if game_over %}
+            {% for card in dealer %}
+              {% set rank = 'A' if card == 1 else card %}
+              {% set suit = ['♠','♥','♦','♣'][loop.index0 % 4] %}
+              {% set color_class = 'red' if suit in ['♥','♦'] else '' %}
+              <div class="playing-card {{ color_class }} hidden">
+                <div class="top-left">{{ rank }}{{ suit }}</div>
+                <div class="center">{{ suit }}</div>
+                <div class="bottom-right">{{ rank }}{{ suit }}</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="playing-card">
+              <div class="top-left">{{ dealer[0] }}♠</div>
+              <div class="center">♠</div>
+              <div class="bottom-right">{{ dealer[0] }}♠</div>
+            </div>
+            <div class="playing-card bg-secondary text-white">?</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="text-center btn-group">
+        {% if not game_over %}
+          <button class="btn btn-warning" id="hit-btn">Hit</button>
+          <button class="btn btn-primary" id="stand-btn">Stand</button>
+        {% else %}
+          <div class="alert alert-info">{{ message }}</div>
+          <a href="{{ url_for('blackjack', action='new') }}" class="btn btn-success">Play Again</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function playMove(action) {
+      fetch(`/games/blackjack?action=${action}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(res => res.text())
+      .then(html => {
+        document.querySelector('.game-container').innerHTML = html;
+
+        // Animate cards
+        setTimeout(() => {
+          document.querySelectorAll('.playing-card.hidden').forEach((card, i) => {
+            setTimeout(() => {
+              card.classList.remove('hidden');
+              card.classList.add('animated');
+            }, 300 * i);
+          });
+        }, 100);
+
+        // Reattach listeners
+        document.getElementById("hit-btn")?.addEventListener("click", () => playMove("hit"));
+        document.getElementById("stand-btn")?.addEventListener("click", () => playMove("stand"));
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Animate initial cards
+      setTimeout(() => {
+        document.querySelectorAll('.playing-card.hidden').forEach((card, i) => {
+          setTimeout(() => {
+            card.classList.remove('hidden');
+            card.classList.add('animated');
+          }, 300 * i);
+        });
+      }, 100);
+
+      // Attach event listeners
+      document.getElementById("hit-btn")?.addEventListener("click", () => playMove("hit"));
+      document.getElementById("stand-btn")?.addEventListener("click", () => playMove("stand"));
+    });
+  </script>
+</body>
+</html>

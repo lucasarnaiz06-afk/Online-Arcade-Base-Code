@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
@@ -50,7 +50,8 @@ class User(db.Model, UserMixin):
     games = db.relationship('UserGame', backref='user', lazy=True)
     scores = db.relationship('Score', backref='user', lazy=True)
     email_confirmed = db.Column(db.Boolean, default=False)
-    
+
+
     def get_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'])
         return s.dumps({'user_id': self.id}, salt='email-confirm')
@@ -67,7 +68,7 @@ class User(db.Model, UserMixin):
         except:
             return None
         return User.query.get(user_id)
-    
+
     @staticmethod
     def verify_reset_token(token):
         s = Serializer(app.config['SECRET_KEY'])
@@ -105,7 +106,7 @@ class FriendRequest(db.Model):
     friend_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     status = db.Column(db.String(20), default='pending')  # pending, accepted, declined
     created = db.Column(db.DateTime, default=datetime.datetime.now)
-
+    
 # Helper functions
 @login_manager.user_loader
 def load_user(user_id):
@@ -121,6 +122,16 @@ def send_email(subject, recipients, text_body, html_body):
     except Exception as e:
         app.logger.error(f"Email sending failed: {e}")
         return False
+    
+@app.route('/admin/set_coins/<int:user_id>/<int:new_amount>')
+def set_coins(user_id, new_amount):
+    user = User.query.get_or_404(user_id)
+    user.coins = new_amount
+    db.session.commit()
+    return f"Set user {user.username}'s coins to {new_amount}"
+#http://localhost:8000/admin/set_coins/1/9999
+#add 9999 coins
+
 
 # Routes
 @app.route('/')
@@ -231,6 +242,7 @@ def register():
     
     return render_template('register.html')
 
+
 # New route for email confirmation
 @app.route('/confirm_email/<token>')
 def confirm_email(token):
@@ -314,7 +326,7 @@ def profile():
                            .order_by(Score.score.desc()) \
                            .limit(5) \
                            .all()
-    
+
     return render_template('profile.html', games=games, top_scores=top_scores)
 
 @app.route('/store')
@@ -795,6 +807,114 @@ def save_picture(form_picture):
     i.save(picture_path)
     
     return picture_fn
+
+@app.route('/games/blackjack', methods=['GET', 'POST'])
+@login_required
+def blackjack():
+    import random
+    if request.args.get('action') == 'new':
+        session.pop('deck', None)
+        session.pop('player', None)
+        session.pop('dealer', None)
+        session.pop('bet', None)
+        session.pop('game_over', None)
+        session.pop('message', None)
+        return redirect(url_for('blackjack'))
+
+    def calculate_score(hand):
+        score = sum(min(card, 10) for card in hand)
+        aces = hand.count(1)
+        while aces > 0 and score + 10 <= 21:
+            score += 10
+            aces -= 1
+        return score
+
+    if request.method == 'POST':
+        bet = int(request.form.get('bet', 0))
+        if bet <= 0 or bet > current_user.coins:
+            flash("Invalid bet amount", "danger")
+            return redirect(url_for('blackjack'))
+
+        # Create and shuffle the deck
+        deck = [1,2,3,4,5,6,7,8,9,10,10,10,10]*4
+        random.shuffle(deck)
+
+        player = [deck.pop(), deck.pop()]
+        dealer = [deck.pop(), deck.pop()]
+
+        session['deck'] = deck
+        session['player'] = player
+        session['dealer'] = dealer
+        session['bet'] = bet
+        session['game_over'] = False
+        session['message'] = ""
+
+        return redirect(url_for('blackjack'))
+
+    # Restore session state
+    deck = session.get('deck', [])
+    player = session.get('player', [])
+    dealer = session.get('dealer', [])
+    bet = session.get('bet', 0)
+    game_over = session.get('game_over', True)
+    message = session.get('message', "")
+
+    if deck and not game_over and request.args.get('action') == 'hit':
+        player.append(deck.pop())
+        session['player'] = player  # <- update the session!
+        session['deck'] = deck
+
+        if calculate_score(player) > 21:
+            session['message'] = "You busted! Dealer wins."
+            current_user.coins -= bet
+            db.session.commit()
+            session['game_over'] = True
+
+        # If it's AJAX, return updated hand
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return render_template("games/_blackjack_partial.html",
+                                player=player, dealer=dealer,
+                                game_over=session.get('game_over', False),
+                                bet=bet, message=session.get('message', ""),
+                                score=calculate_score(player))
+        else:
+            return redirect(url_for('blackjack'))
+
+
+    elif deck and not game_over and request.args.get('action') == 'stand':
+        while calculate_score(dealer) < 17:
+            dealer.append(deck.pop())
+        session['dealer'] = dealer
+
+        player_score = calculate_score(player)
+        dealer_score = calculate_score(dealer)
+
+        if dealer_score > 21 or player_score > dealer_score:
+            session['message'] = "You win!"
+            current_user.coins += bet
+        elif player_score < dealer_score:
+            session['message'] = "Dealer wins!"
+            current_user.coins -= bet
+        else:
+            session['message'] = "It's a tie!"
+        db.session.commit()
+        session['game_over'] = True
+        return redirect(url_for('blackjack'))
+    
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("games/_blackjack_partial.html",
+                           player=player, dealer=dealer,
+                           game_over=game_over, bet=bet,
+                           message=message, score=sum(player) if player else 0)
+
+
+    return render_template('games/blackjack.html',
+                           player=player,
+                           dealer=dealer,
+                           game_over=game_over,
+                           bet=bet,
+                           message=message,
+                           score=sum(player) if player else 0)
 
 if __name__ == '__main__':
     with app.app_context():
