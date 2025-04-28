@@ -22,6 +22,9 @@
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.path == url_for('friends') else '' }}" href="{{ url_for('friends') }}">Friends</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.path == url_for('blackjack') else '' }}" href="{{ url_for('blackjack') }}">Blackjack</a>
+                    </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">
@@ -38,6 +41,8 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="{{ url_for('profile') }}">My Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>
