@@ -122,17 +122,18 @@ def send_email(subject, recipients, text_body, html_body):
     except Exception as e:
         app.logger.error(f"Email sending failed: {e}")
         return False
-    
-@app.route('/admin/set_coins/<int:user_id>/<int:new_amount>')
-def set_coins(user_id, new_amount):
-    user = User.query.get_or_404(user_id)
-    user.coins = new_amount
+
+@app.route('/set_coins', methods = ['GET', 'POST'])
+def set_coins():
     db.session.commit()
-    return f"Set user {user.username}'s coins to {new_amount}"
-#http://localhost:8000/admin/set_coins/1/9999
+    if request.method == 'POST':
+            coin_id = request.form['user_id']
+            coin_amount = request.form['new_amount']
+    return render_template('set_coins.html')
+#http://localhost:8000/set_coins
 #add 9999 coins
 
-
+ 
 # Routes
 @app.route('/')
 def home():
