@@ -9,19 +9,7 @@
   </form>
 {% else %}
   <div class="text-center mb-4">
-    <h3>Your Hand — Total: {{ score }}</h3>
-    <div class="card-row" id="player-hand">
-      {% for card in player %}
-        {% set rank = 'A' if card == 1 else card %}
-        {% set suit = ['♠','♥','♦','♣'][loop.index0 % 4] %}
-        {% set color_class = 'red' if suit in ['♥','♦'] else '' %}
-        <div class="playing-card {{ color_class }} hidden">
-          <div class="top-left">{{ rank }}{{ suit }}</div>
-          <div class="center">{{ suit }}</div>
-          <div class="bottom-right">{{ rank }}{{ suit }}</div>
-        </div>
-      {% endfor %}
-    </div>
+    
 
     <h3>Dealer's Hand{% if game_over %} — Total: {{ dealer | sum }}{% endif %}</h3>
     <div class="card-row" id="dealer-hand">
@@ -44,6 +32,19 @@
         </div>
         <div class="playing-card bg-secondary text-white">?</div>
       {% endif %}
+    </div>
+    <h3>Your Hand — Total: {{ score }}</h3>
+    <div class="card-row" id="player-hand">
+      {% for card in player %}
+        {% set rank = 'A' if card == 1 else card %}
+        {% set suit = ['♠','♥','♦','♣'][loop.index0 % 4] %}
+        {% set color_class = 'red' if suit in ['♥','♦'] else '' %}
+        <div class="playing-card {{ color_class }} hidden">
+          <div class="top-left">{{ rank }}{{ suit }}</div>
+          <div class="center">{{ suit }}</div>
+          <div class="bottom-right">{{ rank }}{{ suit }}</div>
+        </div>
+      {% endfor %}
     </div>
   </div>
 
