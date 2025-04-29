@@ -34,7 +34,6 @@ app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 mail = Mail(app)
 
-# Models
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.datetime.now)
@@ -123,16 +122,24 @@ def send_email(subject, recipients, text_body, html_body):
         app.logger.error(f"Email sending failed: {e}")
         return False
 
-@app.route('/set_coins', methods = ['GET', 'POST'])
+@app.route('/set_coins', methods=['GET', 'POST'])
 def set_coins():
-    db.session.commit()
     if request.method == 'POST':
-            coin_id = request.form['user_id']
-            coin_amount = request.form['new_amount']
+        coin_id = request.form['user_id']
+        coin_amount = request.form['new_amount']
+        
+        # Find the user
+        user = User.query.get(coin_id)
+        if user:
+            user.coins = int(coin_amount)
+            db.session.commit()
+            flash(f"Updated {user.username}'s coins to {coin_amount}.", 'success')
+        else:
+            flash('User not found.', 'danger')
+        
+        return redirect(url_for('set_coins'))
+        
     return render_template('set_coins.html')
-#http://localhost:8000/set_coins
-#add 9999 coins
-
  
 # Routes
 @app.route('/')

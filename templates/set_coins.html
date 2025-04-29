@@ -1,25 +1,33 @@
+<!DOCTYPE html>
 <html>
-    <Head>
-        Change a Players Coin Amount
-    </Head>
+<head>
+    <title>Set Player Coins</title>
+</head>
+<body>
+    <h1>Change a Player's Coin Amount</h1>
 
-
-
-    <body>
+    <form method="post" action="/set_coins">
+        {{ csrf_token() }}
         <div>
-            <form method="post" action="/set_coins">
             <label for="user_id">User Id:</label><br>
-            <input type = "number" id = "user_id" name = "user_id">
-            <div>
-                <label for="new_amount">New Coin Amount:</label><br>
-                <input type = "number" id = "new_amount" name = "new_amount">
-                
-            </div>
-            <div>
-                <input type="submit" value="Submit">
-            </div>
-            </form>
+            <input type="number" id="user_id" name="user_id" required>
         </div>
-    </body>
+        <div>
+            <label for="new_amount">New Coin Amount:</label><br>
+            <input type="number" id="new_amount" name="new_amount" required>
+        </div>
+        <div>
+            <input type="submit" value="Submit">
+        </div>
+    </form>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+          {% for category, message in messages %}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+</body>
 </html>
