@@ -517,7 +517,7 @@ def reset_request():
             <p>This link will expire in 30 minutes.</p>
             <p>If you did not make this request, please ignore this email and your password will remain unchanged.</p>
             '''
-            
+                
             text_body = f'''
             Password Reset Request
             
