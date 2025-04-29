@@ -122,6 +122,7 @@ def send_email(subject, recipients, text_body, html_body):
         app.logger.error(f"Email sending failed: {e}")
         return False
 
+@csrf.exempt
 @app.route('/set_coins', methods=['GET', 'POST'])
 def set_coins():
     if request.method == 'POST':

@@ -7,7 +7,6 @@
     <h1>Change a Player's Coin Amount</h1>
 
     <form method="post" action="/set_coins">
-        {{ csrf_token() }}
         <div>
             <label for="user_id">User Id:</label><br>
             <input type="number" id="user_id" name="user_id" required>
