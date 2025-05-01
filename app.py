@@ -325,19 +325,6 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
-@app.route('/profile')
-@login_required
-def profile():
-    user_games = UserGame.query.filter_by(user_id=current_user.id).all()
-    games = [game.game for game in user_games]
-    
-    top_scores = Score.query.filter_by(user_id=current_user.id) \
-                           .order_by(Score.score.desc()) \
-                           .limit(5) \
-                           .all()
-
-    return render_template('profile.html', games=games, top_scores=top_scores)
-
 @app.route('/games')
 @login_required
 def games():

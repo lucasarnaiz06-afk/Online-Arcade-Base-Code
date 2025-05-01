@@ -14,9 +14,6 @@
                 </li>
                 {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == url_for('profile') else '' }}" href="{{ url_for('profile') }}">My Profile</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.path == url_for('games') else '' }}" href="{{ url_for('games') }}">Games</a>
                     </li>
                     <li class="nav-item">
@@ -40,8 +37,6 @@
                             <i class="bi bi-person-circle"></i> {{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">My Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
