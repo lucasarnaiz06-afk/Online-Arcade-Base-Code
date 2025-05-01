@@ -28,7 +28,7 @@
                 {% if not current_user.is_authenticated %}
                     <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}">Get Started</a>
                 {% else %}
-                    <a class="btn btn-primary btn-lg" href="{{ url_for('store') }}">Browse Games</a>
+                    <a class="btn btn-primary btn-lg" href="{{ url_for('games') }}">Browse Games</a>
                 {% endif %}
             </div>
         </div>

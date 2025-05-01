@@ -338,49 +338,18 @@ def profile():
 
     return render_template('profile.html', games=games, top_scores=top_scores)
 
-@app.route('/store')
+@app.route('/games')
 @login_required
-def store():
+def games():
     all_games = Game.query.all()
     user_games = [game.game_id for game in UserGame.query.filter_by(user_id=current_user.id).all()]
     
-    return render_template('store.html', games=all_games, user_games=user_games)
-
-@app.route('/buy_game/<int:game_id>', methods=['POST'])
-@login_required
-def buy_game(game_id):
-    game = Game.query.get_or_404(game_id)
-    
-    # Check if user already owns the game
-    if UserGame.query.filter_by(user_id=current_user.id, game_id=game_id).first():
-        flash('You already own this game!', 'warning')
-        return redirect(url_for('store'))
-    
-    # Check if user has enough coins
-    if current_user.coins < game.price:
-        flash('Not enough coins to purchase this game!', 'danger')
-        return redirect(url_for('store'))
-    
-    # Process purchase
-    current_user.coins -= game.price
-    user_game = UserGame(user_id=current_user.id, game_id=game_id)
-    
-    db.session.add(user_game)
-    db.session.commit()
-    
-    flash(f'You have successfully purchased {game.name}!', 'success')
-    return redirect(url_for('profile'))
+    return render_template('games.html', games=all_games, user_games=user_games)
 
 @app.route('/play_game/<int:game_id>')
 @login_required
 def play_game(game_id):
     game = Game.query.get_or_404(game_id)
-    
-    # Check if user owns the game
-    user_game = UserGame.query.filter_by(user_id=current_user.id, game_id=game_id).first()
-    if not user_game and game.price > 0:
-        flash('You need to purchase this game before playing!', 'warning')
-        return redirect(url_for('store'))
     
     return render_template(f'games/{game.name.lower().replace(" ", "_")}.html', game=game)
 
