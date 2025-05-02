@@ -1,0 +1,105 @@
+/* Theme and accent color styles */
+body.dark-theme {
+    background-color: #121212;
+    color: #f8f9fa;
+}
+
+.dark-theme .card {
+    background-color: #212121;
+    border-color: #424242;
+}
+
+.dark-theme .card-header {
+    border-bottom-color: #424242;
+}
+
+.dark-theme .list-group-item {
+    background-color: #212121;
+    border-color: #424242;
+    color: #f8f9fa;
+}
+
+.dark-theme .list-group-item.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.dark-theme .modal-content {
+    background-color: #212121;
+    color: #f8f9fa;
+}
+
+.dark-theme .alert-info {
+    background-color: #0c1721;
+    color: #6edff6;
+    border-color: #0c5460;
+}
+
+.dark-theme .form-control {
+    background-color: #2c2c2c;
+    border-color: #424242;
+    color: #f8f9fa;
+}
+
+.dark-theme .form-control:focus {
+    background-color: #2c2c2c;
+    color: #f8f9fa;
+}
+
+.dark-theme .dropdown-menu {
+    background-color: #212121;
+    border-color: #424242;
+}
+
+.dark-theme .dropdown-item {
+    color: #f8f9fa;
+}
+
+.dark-theme .dropdown-item:hover {
+    background-color: #2c2c2c;
+}
+
+.dark-theme .navbar {
+    background-color: #212121 !important;
+    border-color: #424242;
+}
+
+.dark-theme .navbar-light .navbar-brand,
+.dark-theme .navbar-light .navbar-nav .nav-link {
+    color: #f8f9fa;
+}
+
+.dark-theme .table {
+    color: #f8f9fa;
+}
+
+.dark-theme .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Additional elements that might need theming */
+.dark-theme .breadcrumb {
+    background-color: #212121;
+}
+
+.dark-theme .pagination .page-link {
+    background-color: #212121;
+    border-color: #424242;
+    color: #f8f9fa;
+}
+
+.dark-theme .pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+}
+
+.dark-theme hr {
+    border-color: #424242;
+}
+
+/* Accent colors */
+body.accent-blue .list-group-item.active,
+body.accent-blue .btn-primary,
+body.accent-blue .bg-primary {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+}
