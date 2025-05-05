@@ -779,11 +779,14 @@ def blackjack():
     import random
     if request.args.get('action') == 'new':
         session.pop('deck', None)
-        session.pop('player', None)
+        session.pop('player_hands', None)
+        session.pop('active_hand', None)
         session.pop('dealer', None)
-        session.pop('bet', None)
+        session.pop('bets', None)
         session.pop('game_over', None)
         session.pop('message', None)
+        session.pop('can_split', None)
+        session.pop('can_double', None)
         return redirect(url_for('blackjack'))
 
     def calculate_score(hand):
@@ -804,83 +807,260 @@ def blackjack():
         deck = [1,2,3,4,5,6,7,8,9,10,10,10,10]*4
         random.shuffle(deck)
 
-        player = [deck.pop(), deck.pop()]
+        # Initial deal
+        player_hands = [[deck.pop(), deck.pop()]]
         dealer = [deck.pop(), deck.pop()]
 
+        # Check if player can split initially
+        can_split = min(player_hands[0][0], 10) == min(player_hands[0][1], 10) and current_user.coins >= bet * 2
+        
+        # Player can always double initially if they have enough coins
+        can_double = current_user.coins >= bet * 2
+
         session['deck'] = deck
-        session['player'] = player
+        session['player_hands'] = player_hands
+        session['active_hand'] = 0
         session['dealer'] = dealer
-        session['bet'] = bet
+        session['bets'] = [bet]  # List to store bet for each hand
         session['game_over'] = False
         session['message'] = ""
+        session['can_split'] = can_split
+        session['can_double'] = can_double
 
         return redirect(url_for('blackjack'))
 
     # Restore session state
     deck = session.get('deck', [])
-    player = session.get('player', [])
+    player_hands = session.get('player_hands', [[]])
+    active_hand = session.get('active_hand', 0)
     dealer = session.get('dealer', [])
-    bet = session.get('bet', 0)
+    bets = session.get('bets', [0])
     game_over = session.get('game_over', True)
     message = session.get('message', "")
-
-    if deck and not game_over and request.args.get('action') == 'hit':
-        player.append(deck.pop())
-        session['player'] = player  # <- update the session!
-        session['deck'] = deck
-
-        if calculate_score(player) > 21:
-            session['message'] = "You busted! Dealer wins."
-            current_user.coins -= bet
-            db.session.commit()
-            session['game_over'] = True
-
-        # If it's AJAX, return updated hand
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return render_template("games/_blackjack_partial.html",
-                                player=player, dealer=dealer,
-                                game_over=session.get('game_over', False),
-                                bet=bet, message=session.get('message', ""),
-                                score=calculate_score(player))
-        else:
-            return redirect(url_for('blackjack'))
-
-
-    elif deck and not game_over and request.args.get('action') == 'stand':
+    can_split = session.get('can_split', False)
+    can_double = session.get('can_double', False)
+ # Helper function for dealer's turn
+    def dealer_turn():
+        nonlocal dealer, deck
+        
+        # Dealer draws until reaching at least 17
         while calculate_score(dealer) < 17:
             dealer.append(deck.pop())
         session['dealer'] = dealer
-
-        player_score = calculate_score(player)
+        
+        # Determine outcomes for all hands
         dealer_score = calculate_score(dealer)
-
-        if dealer_score > 21 or player_score > dealer_score:
-            session['message'] = "You win!"
-            current_user.coins += bet
-        elif player_score < dealer_score:
-            session['message'] = "Dealer wins!"
-            current_user.coins -= bet
-        else:
-            session['message'] = "It's a tie!"
+        results = []
+        total_win = 0
+        
+        for i, hand in enumerate(player_hands):
+            player_score = calculate_score(hand)
+            
+            if player_score > 21:
+                # Player busted
+                result = "Busted"
+                total_win -= bets[i]
+            elif dealer_score > 21 or player_score > dealer_score:
+                # Player wins
+                result = "Win"
+                total_win += bets[i]
+            elif player_score < dealer_score:
+                # Dealer wins
+                result = "Loss"
+                total_win -= bets[i]
+            else:
+                # Push (tie)
+                result = "Push"
+            
+            results.append(result)
+        
+        # Update player's coins
+        current_user.coins += total_win
         db.session.commit()
+        
+        # Prepare message with results
+        if len(results) == 1:
+            if results[0] == "Busted":
+                session['message'] = "You busted! Dealer wins."
+            elif results[0] == "Win":
+                session['message'] = "You win!"
+            elif results[0] == "Loss":
+                session['message'] = "Dealer wins!"
+            else:
+                session['message'] = "It's a push!"
+        else:
+            # Multiple hands
+            wins = results.count("Win")
+            losses = results.count("Loss") + results.count("Busted")
+            pushes = results.count("Push")
+            
+            message_parts = []
+            if wins > 0:
+                message_parts.append(f"{wins} win{'s' if wins > 1 else ''}")
+            if losses > 0:
+                message_parts.append(f"{losses} loss{'es' if losses > 1 else ''}")
+            if pushes > 0:
+                message_parts.append(f"{pushes} push{'es' if pushes > 1 else ''}")
+            
+            session['message'] = "Game over! Results: " + ", ".join(message_parts) + f". Net change: {total_win} coins."
+        
         session['game_over'] = True
-        return redirect(url_for('blackjack'))
+    
+    # Process player actions
+    if deck and not game_over:
+        # HIT action
+        if request.args.get('action') == 'hit':
+            # Deal a card to the active hand
+            player_hands[active_hand].append(deck.pop())
+            session['player_hands'] = player_hands
+            session['deck'] = deck
+            
+            # After hitting, player can no longer double or split
+            session['can_split'] = False
+            session['can_double'] = False
+            
+            # Check if the active hand busted
+            if calculate_score(player_hands[active_hand]) > 21:
+                if active_hand < len(player_hands) - 1:
+                    # Move to the next hand if there are more
+                    session['active_hand'] = active_hand + 1
+                    session['can_double'] = True  # Can double on the first move of the new hand
+                    
+                    # Check if can split the new active hand (if it has exactly 2 cards of the same value)
+                    new_active_hand = player_hands[active_hand + 1]
+                    if len(new_active_hand) == 2 and min(new_active_hand[0], 10) == min(new_active_hand[1], 10) and current_user.coins >= bets[active_hand + 1] * 2:
+                        session['can_split'] = True
+                    else:
+                        session['can_split'] = False
+                else:
+                    # All hands played, dealer's turn
+                    dealer_turn()
+            
+            # If the hand has exactly 2 cards of the same value after hitting, can no longer split
+            if len(player_hands[active_hand]) > 2:
+                session['can_split'] = False
+                session['can_double'] = False
+            
+            # If it's AJAX, return updated state
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return render_template("games/_blackjack_partial.html",
+                            player_hands=player_hands,
+                            active_hand=session['active_hand'],
+                            dealer=dealer,
+                            game_over=session.get('game_over', False),
+                            bets=bets,
+                            message=session.get('message', ""),
+                            scores=[calculate_score(hand) for hand in player_hands],
+                            can_split=session['can_split'],
+                            can_double=session['can_double'])
+            else:
+                return redirect(url_for('blackjack'))
+
+        # STAND action
+        elif request.args.get('action') == 'stand':
+            if active_hand < len(player_hands) - 1:
+                # Move to the next hand
+                session['active_hand'] = active_hand + 1
+                session['can_double'] = True  # Can double on the first move of the new hand
+                
+                # Check if can split the new active hand
+                new_active_hand = player_hands[active_hand + 1]
+                if len(new_active_hand) == 2 and min(new_active_hand[0], 10) == min(new_active_hand[1], 10) and current_user.coins >= bets[active_hand + 1] * 2:
+                    session['can_split'] = True
+                else:
+                    session['can_split'] = False
+            else:
+                # All hands played, dealer's turn
+                dealer_turn()
+            
+            return redirect(url_for('blackjack'))
+        
+        # DOUBLE action
+        elif request.args.get('action') == 'double':
+            # Double the bet for the active hand
+            if bets[active_hand] * 2 <= current_user.coins and can_double:
+                # Double the bet
+                bets[active_hand] *= 2
+                session['bets'] = bets
+                
+                # Deal one more card
+                player_hands[active_hand].append(deck.pop())
+                session['player_hands'] = player_hands
+                session['deck'] = deck
+                
+                # Move to next hand or dealer's turn
+                if active_hand < len(player_hands) - 1:
+                    session['active_hand'] = active_hand + 1
+                    session['can_double'] = True  # Reset for next hand
+                    
+                    # Check if can split the new active hand
+                    new_active_hand = player_hands[active_hand + 1]
+                    if len(new_active_hand) == 2 and min(new_active_hand[0], 10) == min(new_active_hand[1], 10) and current_user.coins >= bets[active_hand + 1] * 2:
+                        session['can_split'] = True
+                    else:
+                        session['can_split'] = False
+                else:
+                    # All hands played, dealer's turn
+                    dealer_turn()
+                
+                return redirect(url_for('blackjack'))
+        
+        # SPLIT action
+        elif request.args.get('action') == 'split':
+            # Check if the player can split
+            current_hand = player_hands[active_hand]
+            current_bet = bets[active_hand]
+            
+            if len(current_hand) == 2 and min(current_hand[0], 10) == min(current_hand[1], 10) and current_user.coins >= current_bet * 2 and can_split:
+                # Create two new hands from the split pair
+                card1 = current_hand[0]
+                card2 = current_hand[1]
+                
+                # Replace the current hand with just the first card
+                player_hands[active_hand] = [card1, deck.pop()]
+                
+                # Add a new hand with the second card
+                player_hands.insert(active_hand + 1, [card2, deck.pop()])
+                
+                # Add the same bet for the new hand
+                bets.insert(active_hand + 1, current_bet)
+                
+                # Update session
+                session['player_hands'] = player_hands
+                session['bets'] = bets
+                session['deck'] = deck
+                
+                # Can no longer split the current hand
+                session['can_split'] = False
+                
+                return redirect(url_for('blackjack'))
+    
+   
+    # Prepare data for template
+    player_scores = [calculate_score(hand) for hand in player_hands]
     
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return render_template("games/_blackjack_partial.html",
-                           player=player, dealer=dealer,
-                           game_over=game_over, bet=bet,
-                           message=message, score=sum(player) if player else 0)
-
-
-    return render_template('games/blackjack.html',
-                           player=player,
+                           player_hands=player_hands,
+                           active_hand=active_hand,
                            dealer=dealer,
                            game_over=game_over,
-                           bet=bet,
+                           bets=bets,
                            message=message,
-                           score=sum(player) if player else 0)
+                           scores=player_scores,
+                           can_split=can_split,
+                           can_double=can_double)
 
+    return render_template('games/blackjack.html',
+                           player_hands=player_hands,
+                           active_hand=active_hand,
+                           dealer=dealer,
+                           game_over=game_over,
+                           bets=bets,
+                           message=message,
+                           scores=player_scores,
+                           can_split=can_split,
+                           can_double=can_double)
 if __name__ == '__main__':
     with app.app_context():
         # Ensure avatar directory exists
