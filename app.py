@@ -826,6 +826,15 @@ def blackjack():
         session['message'] = ""
         session['can_split'] = can_split
         session['can_double'] = can_double
+        def get_face_value(card):
+            if card == 10:
+                return random.choice(['10', 'J', 'Q', 'K'])
+            elif card == 1:
+                return 'A'
+            else:
+                return str(card)
+
+        session['dealer_faces'] = [get_face_value(c) for c in dealer]
 
         return redirect(url_for('blackjack'))
 
@@ -905,6 +914,7 @@ def blackjack():
             session['message'] = "Game over! Results: " + ", ".join(message_parts) + f". Net change: {total_win} coins."
         
         session['game_over'] = True
+    
     
     # Process player actions
     if deck and not game_over:
@@ -1038,7 +1048,9 @@ def blackjack():
    
     # Prepare data for template
     player_scores = [calculate_score(hand) for hand in player_hands]
-    
+    dealer_score = calculate_score(session.get('dealer', []))
+    dealer_faces = session.get('dealer_faces', [])
+
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return render_template("games/_blackjack_partial.html",
                            player_hands=player_hands,
@@ -1049,7 +1061,9 @@ def blackjack():
                            message=message,
                            scores=player_scores,
                            can_split=can_split,
-                           can_double=can_double)
+                           can_double=can_double,
+                           dealer_score=dealer_score,
+                           dealer_faces=dealer_faces)
 
     return render_template('games/blackjack.html',
                            player_hands=player_hands,
@@ -1060,7 +1074,9 @@ def blackjack():
                            message=message,
                            scores=player_scores,
                            can_split=can_split,
-                           can_double=can_double)
+                           can_double=can_double,
+                           dealer_score=dealer_score,
+                           dealer_faces=dealer_faces)
 if __name__ == '__main__':
     with app.app_context():
         # Ensure avatar directory exists
