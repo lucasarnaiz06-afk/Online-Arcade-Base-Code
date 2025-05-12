@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}Plinko Game{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/plinko.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="plinko-container">
+    <h1>Plinko Game</h1>
+    
+    <div class="game-info">
+        <p>Current Balance: $<span id="balance">{{ balance }}</span></p>
+        <p>Bet Amount: $<span id="bet-amount">5</span></p>
+    </div>
+    
+    <div class="plinko-board" id="plinko-board">
+        <!-- Plinko board will be rendered with JavaScript -->
+    </div>
+    
+    <div class="plinko-controls">
+        <form id="plinko-form" method="POST" action="{{ url_for('plinko.plinko_play') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="bet_amount" id="bet_amount_input" value="5">
+            <input type="hidden" name="landing_position" id="landing_position" value="0">
+            
+            <div class="bet-controls">
+                <button type="button" id="decrease-bet">-</button>
+                <span id="current-bet">$5</span>
+                <button type="button" id="increase-bet">+</button>
+            </div>
+            
+            <button type="button" id="drop-ball" class="primary-button">Drop Ball</button>
+        </form>
+    </div>
+    
+    <div id="result-message" class="result-message"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/plinko.js') }}"></script>
+{% endblock %}

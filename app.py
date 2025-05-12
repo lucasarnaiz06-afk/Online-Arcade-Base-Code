@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, session
+from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify, Blueprint
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
@@ -8,10 +8,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
 import os, datetime
 from werkzeug.utils import secure_filename
+import random
 import json
 import os
 import secrets
 from PIL import Image
+from functools import wraps
+from plinko_routes import plinko_bp
+
 
 load_dotenv()
 
@@ -25,6 +29,11 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 csrf = CSRFProtect(app)
+
+
+# Register blueprints
+app.register_blueprint(plinko_bp)
+
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -1223,3 +1232,4 @@ if __name__ == '__main__':
             db.session.commit()
     
     app.run(debug=True, port=8000, host='0.0.0.0')
+
