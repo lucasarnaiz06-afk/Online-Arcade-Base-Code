@@ -41,6 +41,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(300), nullable=False)
     coins = db.Column(db.Integer, default=100)
+    is_admin = db.Column(db.Boolean, default=False)
     avatar = db.Column(db.String(100), default='default_avatar.png')
     bio = db.Column(db.Text, nullable=True)
     theme = db.Column(db.String(20), default='light')
@@ -105,7 +106,8 @@ class FriendRequest(db.Model):
     friend_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     status = db.Column(db.String(20), default='pending')  # pending, accepted, declined
     created = db.Column(db.DateTime, default=datetime.datetime.now)
-    
+
+
 # Helper functions
 @login_manager.user_loader
 def load_user(user_id):
@@ -122,9 +124,13 @@ def send_email(subject, recipients, text_body, html_body):
         app.logger.error(f"Email sending failed: {e}")
         return False
 
-@csrf.exempt
+
 @app.route('/set_coins', methods=['GET', 'POST'])
+@login_required
 def set_coins():
+    if not current_user.is_admin:
+        flash("Access denied. Admins only.", "danger")
+        return redirect(url_for('home'))
     if request.method == 'POST':
         coin_id = request.form['user_id']
         coin_amount = request.form['new_amount']
@@ -772,6 +778,113 @@ def save_picture(form_picture):
     i.save(picture_path)
     
     return picture_fn
+
+@app.route('/games/mines', methods=['GET', 'POST'])
+@login_required
+def mines():
+    import random
+
+    # Reset game session if user clicks "Play Again"
+    if request.method == 'GET' and request.args.get('reset') == 'true':
+        session.pop('mines_game', None)
+
+    # Start a new game
+    if request.method == 'POST':
+        try:
+            bet = int(request.form.get('bet', 0))
+            mine_count = int(request.form.get('mines', 3))
+        except ValueError:
+            flash("Invalid input.", "danger")
+            return redirect(url_for('mines'))
+
+        # Validate inputs
+        if bet <= 0 or bet > current_user.coins or not (1 <= mine_count <= 24):
+            flash("Invalid bet or number of mines (1–24 allowed).", "danger")
+            return redirect(url_for('mines'))
+
+        # Deduct bet and initialize game board
+        current_user.coins -= bet
+        db.session.commit()
+
+        grid_size = 25
+        mine_positions = random.sample(range(grid_size), mine_count)
+
+        session['mines_game'] = {
+            'bet': bet,
+            'mines': mine_count,
+            'mine_positions': mine_positions,
+            'safe_revealed': [],
+            'grid_size': grid_size,
+            'active': True
+        }
+
+        return redirect(url_for('mines'))
+
+    # Load existing game
+    game = session.get('mines_game')
+    multiplier = None
+
+    # Calculate multiplier if game is active
+    if game and game['active']:
+        revealed = len(game['safe_revealed'])
+        t = game['grid_size']
+        m = game['mines']
+        s=m+t-.1
+        multiplier = 1.0
+        for i in range(revealed):
+            multiplier *= (s - i) / (t - i)
+
+    return render_template('games/mines.html', game=game, current_user=current_user, multiplier=multiplier)
+
+
+@app.route('/games/mines/pick/<int:tile>')
+@login_required
+def mines_pick(tile):
+    game = session.get('mines_game')
+    if not game or not game['active']:
+        return redirect(url_for('mines'))
+
+    if tile in game['safe_revealed']:
+        return redirect(url_for('mines'))
+
+    if tile in game['mine_positions']:
+        game['active'] = False
+    else:
+        game['safe_revealed'].append(tile)
+
+    session['mines_game'] = game
+    return redirect(url_for('mines'))
+
+@app.route('/games/mines/cashout')
+@login_required
+def mines_cashout():
+    game = session.get('mines_game')
+    if not game or not game['active']:
+        return redirect(url_for('mines'))
+
+    # Extract game data
+    revealed = len(game['safe_revealed'])
+    t = game['grid_size']
+    m = game['mines']
+    s = t - m
+    bet = game['bet']
+
+    # Calculate multiplier
+    if revealed == 0:
+        multiplier = 1.0
+    else:
+        multiplier = 1.0
+        for i in range(revealed):
+            multiplier *= (s - i) / (t - i)
+
+    # Compute winnings and update user balance
+    winnings = int(bet * multiplier)
+    current_user.coins += winnings
+    db.session.commit()
+
+    # End game and clear session
+    session.pop('mines_game', None)
+    return redirect(url_for('mines'))
 
 @app.route('/games/blackjack', methods=['GET', 'POST'])
 @login_required
