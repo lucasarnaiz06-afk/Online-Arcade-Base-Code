@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getPayoutForSlot(slot) {
         // This is a simple payout scheme; you might want to adjust based on your game design
-        const payouts = [10, 5, 3, 2, 1, 2, 3, 5, 10];
+        const payouts = [10, 2, 1.5, 1, 0.5, 1, 1.5, 2, 10];
         return payouts[slot] || 1;
     }
     

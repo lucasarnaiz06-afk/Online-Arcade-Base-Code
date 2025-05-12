@@ -45,7 +45,7 @@ def plinko_play():
         }), 400
     
     # Calculate payout based on landing position
-    payouts = [10, 5, 3, 2, 1, 2, 3, 5, 10]
+    payouts = [10, 2, 1.5, 1, 0.5, 1, 1.5, 2, 10]
     payout_multiplier = payouts[landing_position] if 0 <= landing_position < len(payouts) else 1
     win_amount = bet_amount * payout_multiplier
     
