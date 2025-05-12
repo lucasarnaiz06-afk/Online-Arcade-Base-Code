@@ -932,19 +932,25 @@ def blackjack():
             # Check if the active hand busted
             if calculate_score(player_hands[active_hand]) > 21:
                 if active_hand < len(player_hands) - 1:
-                    # Move to the next hand if there are more
                     session['active_hand'] = active_hand + 1
-                    session['can_double'] = True  # Can double on the first move of the new hand
+                    session['can_double'] = True
                     
-                    # Check if can split the new active hand (if it has exactly 2 cards of the same value)
                     new_active_hand = player_hands[active_hand + 1]
                     if len(new_active_hand) == 2 and min(new_active_hand[0], 10) == min(new_active_hand[1], 10) and current_user.coins >= bets[active_hand + 1] * 2:
                         session['can_split'] = True
                     else:
                         session['can_split'] = False
                 else:
-                    # All hands played, dealer's turn
-                    dealer_turn()
+                    # Check if all player hands are busted
+                    all_busted = all(calculate_score(hand) > 21 for hand in player_hands)
+                    
+                    if all_busted:
+                        # End game without playing dealer
+                        session['game_over'] = True
+                        session['message'] = "All hands busted. Dealer doesn't need to play."
+                    else:
+                        dealer_turn()
+            dealer_score = calculate_score(session.get('dealer', []))
             
             # If the hand has exactly 2 cards of the same value after hitting, can no longer split
             if len(player_hands[active_hand]) > 2:
@@ -962,6 +968,7 @@ def blackjack():
                             message=session.get('message', ""),
                             scores=[calculate_score(hand) for hand in player_hands],
                             can_split=session['can_split'],
+                            dealer_score = dealer_score,
                             can_double=session['can_double'])
             else:
                 return redirect(url_for('blackjack'))
