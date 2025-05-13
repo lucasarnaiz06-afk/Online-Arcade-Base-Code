@@ -45,11 +45,11 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-3">
           <label>Enter Bet (You have {{ current_user.coins }}):</label>
-          <input type="number" name="bet" class="form-control" min="1" max="{{ current_user.coins }}" required>
+          <input type="number" name="bet" class="form-control text-center" min="1" max="{{ current_user.coins }}" required>
         </div>
         <div class="mb-3">
           <label># of Mines (1–24):</label>
-          <input type="number" name="mines" class="form-control" min="1" max="24" required>
+          <input type="number" name="mines" class="form-control text-center" min="1" max="24" required>
         </div>
         <button class="btn btn-success">Start Game</button>
       </form>
