@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Casino Games{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <header>
+        <!-- Your header content -->
+        <nav>
+            <!-- Navigation menu -->
+        </nav>
+    </header>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer>
+        <!-- Your footer content -->
+    </footer>
+    
+    <!-- Include global scripts -->
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    {% block scripts %}
+        <!-- Base scripts will go here -->
+    {% endblock %}
+</body>
+</html>

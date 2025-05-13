@@ -1,0 +1,100 @@
+{# This script tag will embed the result data for JS to pick up after AJAX update #}
+{% if result %}
+<script id="plinko-result-data" type="application/json">
+    {{ result|tojson|safe }}
+</script>
+{% endif %}
+
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <div class="card bg-dark text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Your Balance</h5>
+                <p class="card-text fs-4 fw-bold">
+                    <i class="bi bi-coin"></i> <span id="game-user-coins">{{ current_user.coins }}</span> coins
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+         <a href="{{ url_for('plinko', action='new') }}" id="plinko-new-game-btn" class="btn btn-lg btn-outline-light me-2">
+            <i class="bi bi-arrow-clockwise"></i> New Game
+        </a>
+    </div>
+</div>
+
+
+{% if message %}
+<div class="alert alert-info text-center my-3 fs-5">{{ message }}</div>
+{% endif %}
+
+<div id="plinko-board-container" class="shadow">
+    {# SVG board will be drawn here by JavaScript #}
+</div>
+
+<form method="POST" action="{{ url_for('plinko') }}" id="plinko-form" class="mt-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row justify-content-center align-items-end g-3">
+        <div class="col-auto">
+            <label for="bet" class="form-label text-white">Bet Amount:</label>
+            <select class="form-select form-select-lg bg-secondary text-white border-secondary" name="bet" id="bet" required>
+                {% for bet_amount in config.bet_amounts %}
+                <option value="{{ bet_amount }}" {% if result and result.bet_amount == bet_amount %}selected{% endif %}>{{ bet_amount }} coins</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-lg btn-success w-100">
+                <i class="bi bi-play-circle-fill"></i> Drop Ball
+            </button>
+        </div>
+    </div>
+</form>
+
+{% if history and history|length > 0 %}
+<div class="mt-5">
+    <h3 class="text-center mb-3 text-white">Recent Games</h3>
+    <div class="table-responsive">
+        <table class="table table-dark table-striped table-hover history-table shadow-sm rounded">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Bet</th>
+                    <th>Multiplier</th>
+                    <th>Winnings</th>
+                    <th>Net Change</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in history %}
+                <tr>
+                    <td>{{ loop.revindex }}</td>
+                    <td><i class="bi bi-coin"></i> {{ game.bet_amount }}</td>
+                    <td>x{{ game.payout_multiplier }}</td>
+                    <td><i class="bi bi-coin"></i> {{ game.winnings }}</td>
+                    <td>
+                        {% if game.net_change > 0 %}
+                            <span class="text-success fw-bold">+{{ game.net_change }}</span>
+                        {% elif game.net_change < 0 %}
+                            <span class="text-danger fw-bold">{{ game.net_change }}</span>
+                        {% else %}
+                            <span class="text-warning">0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if game.winnings > game.bet_amount %}
+                        <span class="badge bg-win rounded-pill">Win</span>
+                        {% elif game.winnings > 0 %}
+                         <span class="badge bg-even rounded-pill">Even</span>
+                        {% else %}
+                        <span class="badge bg-loss rounded-pill">Loss</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
