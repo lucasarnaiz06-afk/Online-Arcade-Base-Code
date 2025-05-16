@@ -14,7 +14,7 @@ import os
 import secrets
 from PIL import Image
 from functools import wraps
-from plinko_routes import plinko_bp
+
 
 
 load_dotenv()
@@ -31,8 +31,7 @@ login_manager.login_view = 'login'
 csrf = CSRFProtect(app)
 
 
-# Register blueprints
-app.register_blueprint(plinko_bp)
+
 
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -1251,6 +1250,54 @@ def blackjack():
                            can_double=can_double,
                            dealer_score=dealer_score,
                            dealer_faces=dealer_faces)
+@app.route('/games/plinko')
+@login_required
+def plinko():
+    return render_template('games/plinko.html', current_user=current_user)
+
+@app.route('/games/plinko/play', methods=['POST'])
+@login_required
+def plinko_play():
+    try:
+        bet = int(request.form.get('bet_amount', 0))
+        slot_index = int(request.form.get('landing_position', 0))
+    except (ValueError, TypeError):
+        return jsonify(success=False, message="Invalid input."), 400
+
+    if bet <= 0 or bet > current_user.coins:
+        return jsonify(success=False, message="Invalid bet."), 400
+
+    payouts = [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6]
+
+    if 0 <= slot_index < len(payouts):
+        multiplier = payouts[slot_index]
+    else:
+        multiplier = 1.0
+
+    winnings = int(bet * multiplier)
+
+    # Backend updates the balance (not JS)
+    current_user.coins -= bet
+    current_user.coins += winnings
+    db.session.commit()
+    print(slot_index)
+    return jsonify(success=True, win_amount=winnings, new_balance=current_user.coins)
+@app.route('/games/plinko/start', methods=['POST'])
+@login_required
+def plinko_start():
+    try:
+        bet = int(request.form.get('bet_amount', 0))
+    except (ValueError, TypeError):
+        return jsonify(success=False, message="Invalid bet."), 400
+
+    if bet <= 0 or bet > current_user.coins:
+        return jsonify(success=False, message="Invalid bet amount."), 400
+
+    current_user.coins -= bet
+    db.session.commit()
+    return jsonify(success=True, new_balance=current_user.coins)
+
+
 if __name__ == '__main__':
     with app.app_context():
         # Ensure avatar directory exists
