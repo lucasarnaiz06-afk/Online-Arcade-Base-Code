@@ -340,14 +340,6 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
-@app.route('/games')
-@login_required
-def games():
-    all_games = Game.query.all()
-    user_games = [game.game_id for game in UserGame.query.filter_by(user_id=current_user.id).all()]
-    
-    return render_template('games.html', games=all_games, user_games=user_games)
-
 @app.route('/play_game/<int:game_id>')
 @login_required
 def play_game(game_id):
@@ -788,6 +780,11 @@ def save_picture(form_picture):
     
     return picture_fn
 
+@app.route('/games')
+@login_required
+def games():
+    return render_template('games.html')
+
 @app.route('/games/mines', methods=['GET', 'POST'])
 @login_required
 def mines():
@@ -918,11 +915,12 @@ def slots_spin():
 
     if bet <= 0 or bet > current_user.coins:
         return jsonify({'error': 'Invalid bet'}), 400
+    
 
     current_user.coins -= bet
 
     symbols = ['🍒', '🍋', '💎', '🍉', '🍌']  # 🍌 = no payout
-    weights = [0.30, 0.15, 0.05, 0.20, 0.30]
+    weights = [0.25, 0.10, 0.05, 0.25, 0.35]
 
     spin = random.choices(symbols, weights, k=3)
 
@@ -940,7 +938,6 @@ def slots_spin():
 
     current_user.coins += win
     db.session.commit()
-
     return jsonify({'symbols': spin, 'win': win, 'coins': current_user.coins})
 
 @app.route('/games/blackjack', methods=['GET', 'POST'])

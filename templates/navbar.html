@@ -18,16 +18,6 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.path == url_for('friends') else '' }}" href="{{ url_for('friends') }}">Friends</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == url_for('blackjack') else '' }}" href="{{ url_for('blackjack') }}">Blackjack</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == url_for('mines') else '' }}" href="{{ url_for('mines') }}">Mines</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == url_for('slots_animated') else '' }}" href="{{ url_for('slots_animated') }}">Slots</a>
-                    </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">
