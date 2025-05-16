@@ -838,10 +838,15 @@ def mines():
         revealed = len(game['safe_revealed'])
         t = game['grid_size']
         m = game['mines']
-        s=m+t-.1
+        s=t+m
         multiplier = 1.0
         for i in range(revealed):
             multiplier *= (s - i) / (t - i)
+
+        # Ensure multiplier never drops below 1.0 if at least 1 safe tile was hit
+        if revealed > 0 and multiplier < 1.0:
+            multiplier = 1.0
+
 
     return render_template('games/mines.html', game=game, current_user=current_user, multiplier=multiplier)
 
@@ -875,16 +880,16 @@ def mines_cashout():
     revealed = len(game['safe_revealed'])
     t = game['grid_size']
     m = game['mines']
-    s = t - m
     bet = game['bet']
+    s=t+m
+    multiplier = 1.0
+    for i in range(revealed):
+        multiplier *= (s - i) / (t - i)
 
-    # Calculate multiplier
-    if revealed == 0:
+        # Ensure multiplier never drops below 1.0 if at least 1 safe tile was hit
+    if revealed > 0 and multiplier < 1.0:
         multiplier = 1.0
-    else:
-        multiplier = 1.0
-        for i in range(revealed):
-            multiplier *= (s - i) / (t - i)
+
 
     # Compute winnings and update user balance
     winnings = int(bet * multiplier)
@@ -893,7 +898,50 @@ def mines_cashout():
 
     # End game and clear session
     session.pop('mines_game', None)
+    print(winnings)
+    print(multiplier)
+    print(bet)
     return redirect(url_for('mines'))
+
+
+@app.route('/games/slots_animated')
+@login_required
+def slots_animated():
+    return render_template('games/slots_animated.html')
+@app.route('/games/slots/spin', methods=['POST'])
+@login_required
+@csrf.exempt
+def slots_spin():
+    import random
+    data = request.get_json()
+    bet = int(data.get('bet', 0))
+
+    if bet <= 0 or bet > current_user.coins:
+        return jsonify({'error': 'Invalid bet'}), 400
+
+    current_user.coins -= bet
+
+    symbols = ['🍒', '🍋', '💎', '🍉', '🍌']  # 🍌 = no payout
+    weights = [0.30, 0.15, 0.05, 0.20, 0.30]
+
+    spin = random.choices(symbols, weights, k=3)
+
+    win = 0
+    if spin == ['💎', '💎', '💎']:
+        win = bet * 1000
+    elif spin == ['🍒', '🍒', '🍒']:
+        win = bet * 10
+    elif spin == ['🍋', '🍋', '🍋']:
+        win = bet * 20
+    elif spin == ['🍉', '🍉', '🍉']:
+        win = bet * 5
+    elif spin.count('🍒') == 2:
+        win = bet * 2
+
+    current_user.coins += win
+    db.session.commit()
+
+    return jsonify({'symbols': spin, 'win': win, 'coins': current_user.coins})
 
 @app.route('/games/blackjack', methods=['GET', 'POST'])
 @login_required

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎰 Animated Slots</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <style>
+    .slot-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 40px 0;
+    }
+    .slot-reel {
+      width: 80px;
+      height: 80px;
+      font-size: 3rem;
+      border: 3px solid #888;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  {% include 'navbar.html' %}
+
+
+<div class="container py-5 text-center">
+  <h1>🎰 Slots Game</h1>
+  <p>You have <strong id="coin-display">{{ current_user.coins }}</strong> coins.</p>
+  <form id="spin-form">
+    <input type="number" name="bet" id="bet" class="form-control d-inline-block w-auto" min="1" max="{{ current_user.coins }}" required>
+    <button type="submit" class="btn btn-success ml-2">Spin</button>
+  </form>
+
+  <div class="slot-container mt-4">
+    <div class="slot-reel" id="reel1">❓</div>
+    <div class="slot-reel" id="reel2">❓</div>
+    <div class="slot-reel" id="reel3">❓</div>
+  </div>
+
+  <div id="result-message" class="mt-4"></div>
+
+  <div class="col-md-6 mx-auto mt-5">
+    <h3>🎯 Payout Table</h3>
+    <ul class="list-group">
+      <li class="list-group-item">💎 💎 💎 — 1000x bet</li>
+      <li class="list-group-item">🍋 🍋 🍋 — 20x bet</li>
+      <li class="list-group-item">🍒 🍒 🍒 — 10x bet</li>
+      <li class="list-group-item">🍉 🍉 🍉 — 5x bet</li>
+      <li class="list-group-item">Any two 🍒 — 2x bet</li>
+      <li class="list-group-item text-muted">🍌 - no payout</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const symbols = ['🍒', '🍋', '💎', '🍉', '🍌'];
+  const spinDuration = 2000;
+
+  document.getElementById('spin-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const bet = document.getElementById('bet').value;
+    const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+    const message = document.getElementById('result-message');
+    const coinDisplay = document.getElementById('coin-display');
+
+    message.innerHTML = '';
+
+    let spinInterval = setInterval(() => {
+      reels.forEach(reel => {
+        const rand = Math.floor(Math.random() * symbols.length);
+        reel.textContent = symbols[rand];
+      });
+    }, 100);
+
+    try {
+      const response = await fetch("/games/slots/spin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ bet: bet })
+      });
+
+      const data = await response.json();
+
+      setTimeout(() => {
+        clearInterval(spinInterval);
+        reels[0].textContent = data.symbols[0];
+        reels[1].textContent = data.symbols[1];
+        reels[2].textContent = data.symbols[2];
+
+        coinDisplay.textContent = data.coins;
+
+        if (data.win > 0) {
+          message.innerHTML = `<div class="alert alert-success">You won ${data.win} coins!</div>`;
+        } else {
+          message.innerHTML = `<div class="alert alert-danger">No win this time.</div>`;
+        }
+      }, spinDuration);
+    } catch (err) {
+      clearInterval(spinInterval);
+      message.innerHTML = `<div class="alert alert-danger">Something went wrong. Please try again.</div>`;
+    }
+  });
+</script>
+</body>
+</html>
