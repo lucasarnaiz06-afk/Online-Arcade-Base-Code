@@ -12,7 +12,7 @@ let rows = 13;
 let spacing = 40;
 let topPlinkoPos;
 let cols;
-let fixedPayouts = [5, 2, 1.4, 1, 0.8, 0.5, 0.5, 0.3, 0.5, 0.5, 0.8, 1, 1.4, 2, 5];
+let fixedPayouts = [4, 2, 1.4, 1, 0.8, 0.5, 0.5, 0.3, 0.5, 0.5, 0.8, 1, 1.4, 2, 4];
 
 function setup() {
   let canvas = createCanvas(600, 600);
