@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🪜 Ladder Climb</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .ladder-container {
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 30px;
+    }
+    .ladder-level {
+      display: flex;
+      justify-content: space-around;
+      margin: 10px 0;
+    }
+    .ladder-step {
+      width: 100px;
+      height: 60px;
+      border-radius: 10px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      opacity: 1;
+      transition: opacity 0.4s;
+    }
+    .ladder-step.transparent {
+      opacity: 0.4;
+    }
+    .safe-step {
+      background-color: #28a745;
+    }
+    .fail-step {
+      background-color: #dc3545;
+    }
+    .unsafe-step {
+      background-color: #6c757d;
+    }
+    .btn-choice {
+      width: 100px;
+    }
+    .bomb-img {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  {% include 'navbar.html' %}
+
+  <div class="container ladder-container">
+    <h1 class="mb-4">🪜 Multiplier Climb</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if not game %}
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Enter Bet (You have {{ current_user.coins }}):</label>
+        <input type="number" name="bet" class="form-control text-center mb-3" min="1" max="{{ current_user.coins }}" required>
+
+        <label>How many safe spots per row? (1 or 2):</label>
+        <input type="number" name="safe_spots" class="form-control text-center mb-3" min="1" max="2" required>
+
+        <button class="btn btn-success">Start Game</button>
+      </form>
+    {% else %}
+      <h4 class="mb-3">Level: {{ game.level }} | Multiplier: {{ "%.2f"|format(game.multiplier) }}x</h4>
+
+      {% for step in game.history %}
+        <div class="ladder-level">
+          {% for pos in ['left', 'middle', 'right'] %}
+            {% set is_choice = step.choice == pos %}
+            {% set is_safe = pos in step.safes %}
+            {% set failed = not step.success and is_choice and not is_safe %}
+            <div class="ladder-step btn 
+              {% if is_choice %}transparent{% endif %}
+              {% if is_safe %}safe-step{% elif step.choice %}unsafe-step{% endif %}
+              {% if failed %}fail-step{% endif %}
+            " disabled>
+              {% if failed %}<img src="https://cdn-icons-png.flaticon.com/512/753/753345.png" class="bomb-img">{% endif %}
+              {{ pos.capitalize() }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      {% if game.active %}
+        <div class="ladder-level">
+          <form method="POST" action="{{ url_for('ladder_pick', choice='left') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-primary btn-choice">Left</button>
+          </form>
+          <form method="POST" action="{{ url_for('ladder_pick', choice='middle') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-primary btn-choice">Middle</button>
+          </form>
+          <form method="POST" action="{{ url_for('ladder_pick', choice='right') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-primary btn-choice">Right</button>
+          </form>
+        </div>
+
+        <div class="mt-4">
+          <a href="{{ url_for('ladder_cashout') }}" class="btn btn-warning">💰 Cash Out</a>
+        </div>
+      {% else %}
+        <div class="mt-4">
+          <h3>Game Over!</h3>
+          <a href="{{ url_for('ladder_reset') }}" class="btn btn-light">Play Again</a>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+</body>
+</html>

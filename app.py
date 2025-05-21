@@ -1321,11 +1321,99 @@ def plinko_payout():
 def navbar():
     return render_template("navbar.html")
 
-if __name__ == '__main__':
-    with app.app_context():
-        # Ensure avatar directory exists
-        ensure_avatar_directory_exists()
-        db.create_all()
+
+@app.route('/ladder_climb', methods=['GET', 'POST'])
+def ladder_climb():
+    if request.method == 'POST':
+        bet = int(request.form.get('bet', 0))
+        safe_spots = int(request.form.get('safe_spots', 1))
+        safe_spots = max(1, min(2, safe_spots))
+
+        if bet < 1 or bet > current_user.coins:
+            flash('Invalid bet amount.', 'danger')
+            return redirect(url_for('ladder_climb'))
+
+        session['ladder_game'] = {
+            'bet': bet,
+            'level': 1,
+            'multiplier': 1.0,
+            'safe_spots': safe_spots,
+            'history': [],
+            'active': True
+        }
+        current_user.coins -= bet
+        db.session.commit()
+        return redirect(url_for('ladder_climb'))
+
+    game = session.get('ladder_game')
+    return render_template('games/ladder_climb.html', game=game)
+
+@app.route('/ladder_pick/<choice>', methods=['POST'])
+def ladder_pick(choice):
+    game = session.get('ladder_game')
+    if not game or not game['active']:
+        flash('No active game.', 'danger')
+        return redirect(url_for('ladder_climb'))
+
+    spots = ['left', 'middle', 'right']
+    safes = random.sample(spots, game.get('safe_spots', 1))
+    success = choice in safes
+
+    game['history'].append({
+        'choice': choice,
+        'safes': safes,
+        'success': success
+    })
+
+    if success:
+        game['level'] += 1
+        game['multiplier'] = next_multiplier(game['level'], game['safe_spots'])
+    else:
+        game['active'] = False
+
+    session['ladder_game'] = game
+    return redirect(url_for('ladder_climb'))
+
+@app.route('/ladder_cashout')
+def ladder_cashout():
+    game = session.get('ladder_game')
+    if game and game['active']:
+        winnings = int(game['bet'] * game['multiplier'])
+        current_user.coins += winnings
+        flash(f'You cashed out with {winnings} coins!', 'success')
+    else:
+        flash('No active game to cash out.', 'warning')
+
+    session.pop('ladder_game', None)
+    db.session.commit()
+    return redirect(url_for('ladder_climb'))
+
+@app.route('/ladder_climb/reset')
+def ladder_reset():
+    session.pop('ladder_game', None)
+    return redirect(url_for('ladder_climb'))
+
+def next_multiplier(level, safe_spots):
+    if safe_spots == 1:
+        table = {
+            1: 1.0,
+            2: 2.0,
+            3: 4.0,
+            4: 8.0,
+            5: 16.0,
+            6: 32.0
+        }
+    else:
+        table = {
+            1: 1.0,
+            2: 1.5,
+            3: 2.25,
+            4: 3.38,
+            5: 5.06,
+            6: 7.59
+        }
+    return table.get(level, table[max(table.keys())])
+
 
 @app.route('/games/balloon_rise', methods=['GET', 'POST'])
 @login_required
@@ -1418,6 +1506,12 @@ def balloon_check():
     return jsonify({'status': 'ok', 'multiplier': round(multiplier, 2)})
 
 
+
+if __name__ == '__main__':
+    with app.app_context():
+        # Ensure avatar directory exists
+        ensure_avatar_directory_exists()
+        db.create_all()
 
     
 app.run(debug=True, port=8000, host='0.0.0.0')
