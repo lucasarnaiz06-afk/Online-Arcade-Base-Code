@@ -96,6 +96,21 @@ body.dark-theme {
     border-color: #424242;
 }
 
+.dark-theme .jumbotron.bg-light {
+    background-color: #212121 !important;
+    color: #f8f9fa;
+}
+
+.dark-theme .bg-light {
+    background-color: #212121 !important;
+    color: #f8f9fa;
+}
+
+.dark-theme .jumbotron h1, 
+.dark-theme .jumbotron p {
+    color: #f8f9fa;
+}
+
 /* Accent colors */
 body.accent-blue .list-group-item.active,
 body.accent-blue .btn-primary,

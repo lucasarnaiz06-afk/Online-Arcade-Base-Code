@@ -1307,24 +1307,98 @@ if __name__ == '__main__':
         ensure_avatar_directory_exists()
         db.create_all()
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        
+@app.route('/games/balloon_rise', methods=['GET', 'POST'])
+@login_required
+def balloon_rise():
+    if request.method == 'GET' and request.args.get('reset') == 'true':
+        session.pop('balloon_game', None)
+
+    if request.method == 'POST':
+        try:
+            bet = int(request.form.get('bet', 0))
+        except:
+            flash("Invalid bet.", "danger")
+            return redirect(url_for('balloon_rise'))
+
+        if bet <= 0 or bet > current_user.coins:
+            flash("Invalid bet amount.", "danger")
+            return redirect(url_for('balloon_rise'))
+
+        # Deduct bet
+        current_user.coins -= bet
+        db.session.commit()
+
+        # Start game session
+        session['balloon_game'] = {
+            'bet': bet,
+            'start_time': datetime.datetime.now().timestamp(),
+            'popped': False,
+            'cashout': False
+        }
+        return redirect(url_for('balloon_rise'))
+
+    game = session.get('balloon_game')
+    return render_template('games/balloon_rise.html', game=game)
+
+
+@app.route('/games/balloon_rise/cashout')
+@login_required
+def balloon_cashout():
+    game = session.get('balloon_game')
+    if not game or game.get('cashout') or game.get('popped'):
+        return redirect(url_for('balloon_rise'))
+
+    try:
+        inflation_time = float(request.args.get('inflation_time', 0))
+    except:
+        inflation_time = 0
+
+    # Controlled multiplier based on inflation time, not wall time
+    multiplier = min(1.0 + 0.04 * inflation_time**1.5, 100)
+    payout = int(game['bet'] * multiplier)
+
+    current_user.coins += payout
+    db.session.commit()
+
+    game['cashout'] = True
+    session['balloon_game'] = game
+
+    flash(f"You cashed out with a multiplier of {multiplier:.2f}x and won {payout} coins!", "success")
+    return redirect(url_for('balloon_rise'))
+
+
+
+
+@app.route('/games/balloon_rise/check')
+@login_required
+def balloon_check():
+    game = session.get('balloon_game')
+    if not game or game.get('popped') or game.get('cashout'):
+        return jsonify({'status': 'ended'})
+
+    try:
+        inflation_time = float(request.args.get('inflation_time', 0))
+    except:
+        inflation_time = 0
+
+    inflating = request.args.get('inflating', 'false') == 'true'
+
+    # Only allow pop if user is currently inflating
+    if inflating:
+        # New safer curve, capped at 80% chance
+        chance = min(0.0005 * inflation_time**2, 0.85)
+
+        if random.random() < chance:
+            game['popped'] = True
+            session['balloon_game'] = game
+            return jsonify({'status': 'popped'})
+
+    # Multiplier always reflects total inflation time
+    multiplier = min(1.0 + 0.04 * inflation_time**1.5, 100)
+    return jsonify({'status': 'ok', 'multiplier': round(multiplier, 2)})
+
+
+
     
-        if not Game.query.first():
-            games = [
-                # Game(name='Snake', description='Classic snake game. Eat food and grow longer without hitting walls or yourself!', 
-                #      icon='snake.png', price=0),
-                # Game(name='Tetris', description='Arrange falling blocks to create complete lines and score points.', 
-                #      icon='tetris.png', price=50),
-                # Game(name='Pacman', description='Navigate through a maze while collecting dots and avoiding ghosts.', 
-                #      icon='pacman.png', price=75),
-                # Game(name='Space Invaders', description='Defend Earth from alien invaders in this classic arcade shooter.', 
-                #      icon='space_invaders.png', price=100)
-            ]
-            db.session.add_all(games)
-            db.session.commit()
-    
-    app.run(debug=True, port=8000, host='0.0.0.0')
+app.run(debug=True, port=8000, host='0.0.0.0')
 
