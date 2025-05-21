@@ -123,36 +123,5 @@
         <p>&copy; 2025 Online Arcade. All rights reserved.</p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userTheme = "{{ current_user.theme }}";
-
-            if (document.getElementById(userTheme + 'Theme')) {
-                document.getElementById(userTheme + 'Theme').checked = true;
-            }
-
-            applyTheme(userTheme);
-
-            document.querySelectorAll('input[name="theme"]').forEach(function(radio) {
-                radio.addEventListener('change', function() {
-                    applyTheme(this.value);
-                });
-            });
-
-            function applyTheme(theme) {
-                if (theme === 'dark') {
-                    document.body.classList.add('dark-theme');
-                    document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                        item.classList.add('dark-mode');
-                    });
-                } else {
-                    document.body.classList.remove('dark-theme');
-                    document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                        item.classList.remove('dark-mode');
-                    });
-                }
-            }
-        });
-    </script>
 </body>
 </html>

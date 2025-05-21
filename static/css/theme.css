@@ -118,3 +118,36 @@ body.accent-blue .bg-primary {
     background-color: #0d6efd !important;
     border-color: #0d6efd !important;
 }
+.dark-theme .bg-success {
+    background-color: #146c43 !important; /* darker green */
+    color: #f8f9fa !important;
+}
+
+.dark-theme .bg-warning {
+    background-color: #856404 !important;
+    color: #fff !important;
+}
+
+.dark-theme .jumbotron.bg-light,
+.dark-theme .bg-light {
+    background-color: #1e1e1e !important;
+    color: #f8f9fa !important;
+}
+
+.dark-theme .text-muted {
+    color: #b0b0b0 !important;
+}
+
+.dark-theme .text-info {
+    color: #6edff6 !important;
+}
+
+.dark-theme .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.dark-theme .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
