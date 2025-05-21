@@ -1260,7 +1260,7 @@ def plinko():
 def plinko_play():
     try:
         bet = int(request.form.get('bet_amount', 0))
-        slot_index = int(request.form.get('landing_position', 0))
+        landing_x = float(request.form.get('landing_x', 0))
     except (ValueError, TypeError):
         return jsonify(success=False, message="Invalid input."), 400
 
@@ -1268,20 +1268,23 @@ def plinko_play():
         return jsonify(success=False, message="Invalid bet."), 400
 
     payouts = [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6]
+    slot_count = len(payouts)
+    slot_width = 600 / slot_count  # match canvas width in JS
+    slot_index = int(landing_x / slot_width)
 
-    if 0 <= slot_index < len(payouts):
+    if 0 <= slot_index < slot_count:
         multiplier = payouts[slot_index]
     else:
         multiplier = 1.0
 
     winnings = int(bet * multiplier)
-
-    # Backend updates the balance (not JS)
-    current_user.coins -= bet
     current_user.coins += winnings
     db.session.commit()
-    print(slot_index)
+
     return jsonify(success=True, win_amount=winnings, new_balance=current_user.coins)
+
+
+
 @app.route('/games/plinko/start', methods=['POST'])
 @login_required
 def plinko_start():
@@ -1296,6 +1299,22 @@ def plinko_start():
     current_user.coins -= bet
     db.session.commit()
     return jsonify(success=True, new_balance=current_user.coins)
+
+@app.route('/games/plinko/payout', methods=['POST'])
+@login_required
+def plinko_payout():
+    try:
+        payout = float(request.form.get('payout', 0))
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid payout amount'})
+
+    if payout > 0:
+        current_user.coins += payout
+        db.session.commit()
+        return jsonify({'success': True, 'new_balance': round(current_user.coins, 2)})
+    
+    return jsonify({'success': False, 'message': 'Payout must be positive'})
+
 
 @app.route("/navbar")
 def navbar():

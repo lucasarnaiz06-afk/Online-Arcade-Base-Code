@@ -9,7 +9,7 @@
     <link href="/static/style.css" rel="stylesheet"> 
 {% extends "layout.html" %}
 
-{% block title %}Plinko Game{% endblock %}
+{% block title %}Plinko{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/plinko.css') }}">
@@ -18,10 +18,16 @@
 {% block content %}
 {% include 'navbar.html' %}
 <div class="plinko-container container mt-4">
-  <h1 class="text-center mb-4">🎯 Plinko Game</h1>
+  <h1 class="text-center mb-4">Plinko</h1>
 
   <div class="game-info text-center mb-4">
-    <p>Current Balance: <strong><span id="balance">{{ current_user.coins }}</span></strong> coins</p>
+    <p>Current Balance: 
+      <strong>
+        <span id="balance-wrapper">
+          <span id="balance">{{ "%.2f"|format(current_user.coins) }}</span>
+        </span>
+      </strong> coins
+    </p>
     <form method="POST" class="d-inline">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label for="bet_amount_input">Bet per Ball:</label>
@@ -30,6 +36,8 @@
   </div>
 
   <div id="plinko-canvas-container" class="text-center"></div>
+  <div id="plinko-button-wrapper" class="text-center mt-3"></div>
+
 
   <div class="instructions text-center mt-3">
     <p>Click the drop button to release a ball. Your reward depends on the slot it lands in!</p>

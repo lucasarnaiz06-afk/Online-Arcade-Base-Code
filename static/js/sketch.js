@@ -1,3 +1,4 @@
+
 let Engine = Matter.Engine,
   Composite = Matter.Composite,
   Bodies = Matter.Bodies;
@@ -7,59 +8,72 @@ let world;
 let particles = [];
 let plinkos = [];
 let bounds = [];
-let rows = 10;
-let spacing = 50;
+let rows = 13;
+let spacing = 40;
 let topPlinkoPos;
 let cols;
-let fixedPayouts = [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6];
+let fixedPayouts = [5, 2, 1.4, 1, 0.8, 0.5, 0.5, 0.3, 0.5, 0.5, 0.8, 1, 1.4, 2, 5];
 
 function setup() {
-  let canvas = createCanvas(600, 700);
+  let canvas = createCanvas(600, 600);
   canvas.parent("plinko-canvas-container");
   engine = Engine.create();
   world = engine.world;
 
   cols = fixedPayouts.length - 1;
 
-  for (let row = 0; row < rows; row++) {
+  for (let row = 0; row < rows - 1; row++) {
     let pinsInRow = row + 3;
     for (let col = 0; col < pinsInRow; col++) {
       let x = width / 2 - ((pinsInRow - 1) * spacing) / 2 + col * spacing;
       let y = 100 + row * spacing;
       let plinko = new Plinko(x, y, 5);
       plinkos.push(plinko);
-      if (row === 0 && col === 1) topPlinkoPos = { x, y };
+      if (row === 0 && col === 1) {
+        topPlinkoPos = { x, y };
+      }
     }
   }
 
-  let slotCount = cols + 1;
-  let slotWidth = width / slotCount;
-  let dividerHeight = 140;
-  for (let i = 0; i <= slotCount; i++) {
-    let x = i * slotWidth;
-    bounds.push(new Boundary(x, height - dividerHeight / 2, 10, dividerHeight));
-    let cap = Bodies.circle(x, height - dividerHeight - 5, 6, {
-      isStatic: true,
-      restitution: 1,
-      friction: 0
-    });
-    Composite.add(world, cap);
-  }
+  let slotCount = fixedPayouts.length;
+  let slotWidth = width * 0.9 / slotCount;
+  let xOffset = width * 0.05;
+  
 
-  bounds.push(new Boundary(width / 2, height + 40, width, 100));
-
+  
+  const container = document.getElementById("plinko-button-wrapper");
   const dropBtn = createButton('Drop Ball');
-  dropBtn.parent("plinko-canvas-container");
-  dropBtn.style('margin-top', '10px');
+  dropBtn.parent(container);
+  dropBtn.id('drop-ball-button');
   dropBtn.mousePressed(() => {
-    if (topPlinkoPos && currentUserCoins() >= getCurrentBet()) {
-      let jitter = random(-2, 2);
-      particles.push(new Particle(topPlinkoPos.x + jitter, topPlinkoPos.y - 30, 5));
+    const bet = getCurrentBet();
+    if (topPlinkoPos && currentUserCoins() >= bet) {
+      const csrf = document.querySelector('input[name="csrf_token"]').value;
+
+      fetch('/games/plinko/start', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf },
+        body: new URLSearchParams({
+          'csrf_token': csrf,
+          'bet_amount': bet,
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            let jitter = random(-2, 2);
+            particles.push(new Particle(topPlinkoPos.x + jitter, topPlinkoPos.y - 90, 5));
+            document.getElementById('balance').textContent = data.new_balance;
+          } else {
+            alert(data.message);
+          }
+        });
     }
   });
 }
 
 function draw() {
+  animateSlots();
   background(0);
   Engine.update(engine);
 
@@ -69,13 +83,10 @@ function draw() {
   for (let i = particles.length - 1; i >= 0; i--) {
     let particle = particles[i];
     particle.show();
-    if (particle.isOffscreen()) {
+    if (particle.body.position.y > height - 30) {
       let x = particle.body.position.x;
-      let slot = Math.floor((x / width) * (cols + 1));
       let bet = getCurrentBet();
-      let multiplier = getPayoutMultiplier(slot);
-      let payout = Math.floor(bet * multiplier);
-      submitPlinkoResult(slot, bet, payout);
+      processPlinkoResult(x, bet);
       Composite.remove(world, particle.body);
       particles.splice(i, 1);
     }
@@ -83,56 +94,81 @@ function draw() {
 
   textAlign(CENTER);
   textSize(16);
-  let slotWidth = width / (cols + 1);
-  for (let i = 0; i < fixedPayouts.length; i++) {
-    let x = i * slotWidth + slotWidth / 2;
-    let y = height - 10;
+  let slotWidth = width * 0.9 / (cols + 1);
+  let xOffset = width * 0.05;
+  
+for (let i = 0; i < fixedPayouts.length; i++) {
+    let x = xOffset + i * slotWidth + slotWidth / 2;
+    let y = height - 20;
     let mult = fixedPayouts[i];
     fill(mult >= 5 ? '#e74c3c' : mult >= 2 ? '#e67e22' : mult >= 1 ? '#f1c40f' : '#3498db');
     rectMode(CENTER);
-    rect(x, y, 40, 25, 8);
+    
+    let bounce = 1 + slotAnimations[i] * 0.3;
+    rect(x, y + slotAnimations[i] * 5, 40 * bounce, 25 * bounce, 8);
+
     fill(255);
     text(`${mult}x`, x, y + 5);
   }
 }
 
-function getPayoutMultiplier(slotIndex) {
-  return fixedPayouts[slotIndex] || 1;
-}
+function processPlinkoResult(x, bet) {
+  let slotWidth = width * 0.9 / (cols + 1);
+  let xOffset = width * 0.05;
+  let slotIndex = Math.floor((x - xOffset) / slotWidth);
+  slotIndex = Math.max(0, Math.min(fixedPayouts.length - 1, slotIndex));
+  let multiplier = fixedPayouts[slotIndex];
+  let payout = bet * multiplier;
+  slotAnimations[slotIndex] = 1;
 
-function submitPlinkoResult(slotIndex, bet, winnings) {
   const csrf = document.querySelector('input[name="csrf_token"]').value;
 
-  fetch('/games/plinko/play', {
+  fetch('/games/plinko/payout', {
     method: 'POST',
     headers: { 'X-CSRFToken': csrf },
     body: new URLSearchParams({
       'csrf_token': csrf,
-      'bet_amount': bet,
-      'landing_position': slotIndex,
+      'payout': payout,
     })
   })
     .then(res => res.json())
     .then(data => {
-      const msg = document.getElementById('result-message');
       if (data.success) {
-        msg.textContent = `Slot ${slotIndex} → Multiplier: ${getPayoutMultiplier(slotIndex)}x → You won ${data.win_amount} coins!`;
-        msg.className = 'result-message win';
-        document.getElementById('balance').textContent = data.new_balance;
+        const balanceElem = document.getElementById('balance');
+        balanceElem.textContent = parseFloat(data.new_balance).toFixed(2);
+
+        const plus = document.createElement("span");
+        plus.textContent = ` +${payout}`;
+        plus.style.color = "lime";
+        plus.style.marginLeft = "10px";
+        plus.style.transition = "opacity 1s ease";
+        plus.style.opacity = 1;
+        plus.style.fontWeight = 'bold';
+        balanceElem.parentNode.appendChild(plus);
+        setTimeout(() => plus.style.opacity = 0, 800);
+        setTimeout(() => plus.remove(), 1800);
       } else {
-        msg.textContent = data.message;
-        msg.className = 'result-message lose';
+        alert(data.message);
       }
-    })
-    .catch(err => {
-      console.error("Error submitting plinko result:", err);
     });
 }
 
 function getCurrentBet() {
-  return parseInt(document.getElementById('bet_amount_input').value || '5');
+  return parseInt(document.getElementById('bet_amount_input').value || '1');
 }
 
 function currentUserCoins() {
   return parseInt(document.getElementById('balance').textContent || '0');
+}
+
+
+let slotAnimations = new Array(fixedPayouts.length).fill(0);
+
+function animateSlots() {
+  for (let i = 0; i < slotAnimations.length; i++) {
+    if (slotAnimations[i] > 0) {
+      slotAnimations[i] -= 0.05;
+      if (slotAnimations[i] < 0) slotAnimations[i] = 0;
+    }
+  }
 }
