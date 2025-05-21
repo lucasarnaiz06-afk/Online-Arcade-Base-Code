@@ -29,7 +29,8 @@
   </style>
 </head>
 <body>
-  {% include 'navbar.html' %}
+  <div id="navbar-container"></div>
+
 
 
 <div class="container py-5 text-center">
@@ -94,25 +95,51 @@
 
       const data = await response.json();
 
-      setTimeout(() => {
-        clearInterval(spinInterval);
-        reels[0].textContent = data.symbols[0];
-        reels[1].textContent = data.symbols[1];
-        reels[2].textContent = data.symbols[2];
+          setTimeout(() => {
+      clearInterval(spinInterval);
+      reels[0].textContent = data.symbols[0];
+      reels[1].textContent = data.symbols[1];
+      reels[2].textContent = data.symbols[2];
 
-        coinDisplay.textContent = data.coins;
+      coinDisplay.textContent = data.coins;
 
-        if (data.win > 0) {
-          message.innerHTML = `<div class="alert alert-success">You won ${data.win} coins!</div>`;
-        } else {
-          message.innerHTML = `<div class="alert alert-danger">No win this time.</div>`;
-        }
-      }, spinDuration);
+      if (data.win > 0) {
+        message.innerHTML = `<div class="alert alert-success">You won ${data.win} coins!</div>`;
+      } else {
+        message.innerHTML = `<div class="alert alert-danger">No win this time.</div>`;
+      }
+
+      // ✅ Reload the navbar after the spin result
+      fetch("/navbar")
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById("navbar-container").innerHTML = html;
+        })
+        .catch(err => {
+          console.error("Failed to reload navbar:", err);
+        });
+
+    }, spinDuration);
+
     } catch (err) {
       clearInterval(spinInterval);
       message.innerHTML = `<div class="alert alert-danger">Something went wrong. Please try again.</div>`;
     }
   });
 </script>
+<script>
+  fetch("/navbar")
+    .then(response => {
+      if (!response.ok) throw new Error("Failed to fetch navbar");
+      return response.text();
+    })
+    .then(html => {
+      document.getElementById("navbar-container").innerHTML = html;
+    })
+    .catch(err => {
+      console.error("Navbar loading error:", err);
+    });
+</script>
+
 </body>
 </html>

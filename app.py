@@ -1297,6 +1297,9 @@ def plinko_start():
     db.session.commit()
     return jsonify(success=True, new_balance=current_user.coins)
 
+@app.route("/navbar")
+def navbar():
+    return render_template("navbar.html")
 
 if __name__ == '__main__':
     with app.app_context():
