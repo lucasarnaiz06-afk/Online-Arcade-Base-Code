@@ -45,7 +45,8 @@ function setup() {
   const dropBtn = createButton('Drop Ball');
   dropBtn.parent(container);
   dropBtn.id('drop-ball-button');
-  dropBtn.mousePressed(() => {
+  dropBtn.mousePressed((e) => {
+    console.log(e)
     const bet = getCurrentBet();
     if (topPlinkoPos && currentUserCoins() >= bet) {
       const csrf = document.querySelector('input[name="csrf_token"]').value;
