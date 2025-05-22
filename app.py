@@ -1494,7 +1494,7 @@ def balloon_check():
     # Only allow pop if user is currently inflating
     if inflating:
         # New safer curve, capped at 80% chance
-        chance = min(0.0005 * inflation_time**2, 0.85)
+        chance = min(0.02 * inflation_time ** 1.05, 0.95)
 
         if random.random() < chance:
             game['popped'] = True
