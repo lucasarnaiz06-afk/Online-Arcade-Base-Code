@@ -528,7 +528,8 @@ def reset_token(token):
         flash('Your password has been updated! You can now log in.', 'success')
         return redirect(url_for('login'))
     
-    return render_template('reset_token.html')
+    return render_template('reset_token.html', token=token)
+
 
 def allowed_file(filename):
     return '.' in filename and \
