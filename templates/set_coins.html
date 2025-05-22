@@ -2,31 +2,78 @@
 <html>
 <head>
     <title>Set Player Coins</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
-    <h1>Change a Player's Coin Amount</h1>
+    <h1>Set Player Coins</h1>
 
+
+    <h2>Change a Player's Coin Amount</h2>
     <form method="post" action="/set_coins">
         <div>
-            <label for="user_id">User Id:</label><br>
+            <label for="user_id">User ID:</label><br>
             <input type="number" id="user_id" name="user_id" required>
         </div>
         <div>
             <label for="new_amount">New Coin Amount:</label><br>
             <input type="number" id="new_amount" name="new_amount" required>
         </div>
-        <div>
+        <div style="margin-top: 10px;">
             <input type="submit" value="Submit">
         </div>
     </form>
-
+    
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <ul>
-          {% for category, message in messages %}
-          {% endfor %}
-        </ul>
+        {% for category, message in messages %}
+          <div class="message {{ category }}">{{ message }}</div>
+        {% endfor %}
       {% endif %}
     {% endwith %}
+
+    <h2>Current Users</h2>
+    <table>
+        <tr>
+            <th>User ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Coins</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.coins }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>

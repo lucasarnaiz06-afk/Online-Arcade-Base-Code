@@ -14,7 +14,9 @@ import os
 import secrets
 from PIL import Image
 from functools import wraps
-
+from functools import wraps
+from flask import redirect, url_for, flash
+from flask_login import current_user
 
 
 load_dotenv()
@@ -58,6 +60,8 @@ class User(db.Model, UserMixin):
     games = db.relationship('UserGame', backref='user', lazy=True)
     scores = db.relationship('Score', backref='user', lazy=True)
     email_confirmed = db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)
+
 
 
     def get_token(self, expires_sec=1800):
@@ -68,6 +72,7 @@ class User(db.Model, UserMixin):
         s = Serializer(app.config['SECRET_KEY'])
         return s.dumps({'user_id': self.id}, salt='password-reset')
     
+
     @staticmethod
     def verify_email_token(token):
         s = Serializer(app.config['SECRET_KEY'])
@@ -121,6 +126,21 @@ class FriendRequest(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+ADMIN_EMAILS = {'rosui@packer.edu'} 
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash(('error', 'Please log in to access this page.'))
+            return redirect(url_for('login'))
+        if current_user.email not in ADMIN_EMAILS:
+            flash('You do not have permission to access this page.', category='error')
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def send_email(subject, recipients, text_body, html_body):
     try:
         msg = Message(subject, sender=app.config['MAIL_DEFAULT_SENDER'], recipients=recipients)
@@ -134,27 +154,25 @@ def send_email(subject, recipients, text_body, html_body):
 
 @csrf.exempt
 @app.route('/set_coins', methods=['GET', 'POST'])
-@login_required
+@admin_required
 def set_coins():
-    # if not current_user.is_admin:
-    #     flash("Access denied. Admins only.", "danger")
-    #     return redirect(url_for('home'))
     if request.method == 'POST':
-        coin_id = request.form['user_id']
-        coin_amount = request.form['new_amount']
-        
-        # Find the user
-        user = User.query.get(coin_id)
-        if user:
-            user.coins = int(coin_amount)
-            db.session.commit()
-            flash(f"Updated {user.username}'s coins to {coin_amount}.", 'success')
-        else:
-            flash('User not found.', 'danger')
-        
-        return redirect(url_for('set_coins'))
-        
-    return render_template('set_coins.html')
+        user_id = request.form.get('user_id')
+        new_amount = request.form.get('new_amount')
+
+        try:
+            user = User.query.get(int(user_id))
+            if user:
+                user.coins = int(new_amount)
+                db.session.commit()
+            else:
+                flash(('error', f"No user found with ID {user_id}."))
+        except Exception as e:
+            flash(('error', f"Error updating coins: {str(e)}"))
+
+    users = User.query.all()
+    return render_template('set_coins.html', users=users)
+
  
 # Routes
 @app.route('/')
