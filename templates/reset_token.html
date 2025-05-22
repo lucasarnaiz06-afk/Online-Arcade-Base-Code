@@ -13,18 +13,150 @@
                 <h2>Reset Your Password</h2>
                 <form method="POST" action="{{ url_for('reset_token', token=token) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- New Password -->
                     <div class="mb-3">
-                        <label for="password" class="form-label">New Password</label>
-                        <input type="password" class="form-control" name="password" required>
+                        <label for="new_password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="new_password" name="password" required>
                     </div>
+
+                    <!-- Confirm Password -->
                     <div class="mb-3">
                         <label for="confirm_password" class="form-label">Confirm New Password</label>
-                        <input type="password" class="form-control" name="confirm_password" required>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <div id="password-match" class="mt-1 small"></div>
                     </div>
+
+                    <!-- Moved this block below both fields -->
+                    <div class="mb-3">
+                        <label>Password Strength:</label>
+                        <meter max="5" id="password-strength-meter" class="w-100"></meter>
+                        <p id="password-strength-text" class="fw-bold mt-1">Very Weak</p>
+                    </div>
+
+                    <!-- Password requirement checks -->
+                    <ul class="list-unstyled small mb-3">
+                        <li id="length-check" class="text-danger">At least 8 characters</li>
+                        <li id="uppercase-check" class="text-danger">Contains an uppercase letter</li>
+                        <li id="lowercase-check" class="text-danger">Contains a lowercase letter</li>
+                        <li id="number-check" class="text-danger">Contains a number</li>
+                        <li id="special-check" class="text-danger">Contains a special character</li>
+                    </ul>
+
                     <button type="submit" class="btn btn-primary">Reset Password</button>
                 </form>
+
+
             </div>
         </div>
     </div>
+
+<script>
+        // Password strength meter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('new_password');
+            const meter = document.getElementById('password-strength-meter');
+            const strengthText = document.getElementById('password-strength-text');
+            
+            // Elements for requirement checks
+            const lengthCheck = document.getElementById('length-check');
+            const uppercaseCheck = document.getElementById('uppercase-check');
+            const lowercaseCheck = document.getElementById('lowercase-check');
+            const numberCheck = document.getElementById('number-check');
+            const specialCheck = document.getElementById('special-check');
+            
+            // Confirm password match check
+            const confirmInput = document.getElementById('confirm_password');
+            const passwordMatch = document.getElementById('password-match');
+            
+            // Set initial meter state
+            meter.value = 0;
+            
+            // Password strength check function
+            function checkPasswordStrength() {
+                const password = passwordInput.value;
+                let strength = 0;
+                
+                // Reset all check markers
+                lengthCheck.className = 'text-danger';
+                uppercaseCheck.className = 'text-danger';
+                lowercaseCheck.className = 'text-danger';
+                numberCheck.className = 'text-danger';
+                specialCheck.className = 'text-danger';
+                
+                // Check length
+                if (password.length >= 8) {
+                    strength += 1;
+                    lengthCheck.className = 'text-success';
+                }
+                
+                // Check for uppercase letters
+                if (/[A-Z]/.test(password)) {
+                    strength += 1;
+                    uppercaseCheck.className = 'text-success';
+                }
+                
+                // Check for lowercase letters
+                if (/[a-z]/.test(password)) {
+                    strength += 1;
+                    lowercaseCheck.className = 'text-success';
+                }
+                
+                // Check for numbers
+                if (/[0-9]/.test(password)) {
+                    strength += 1;
+                    numberCheck.className = 'text-success';
+                }
+                
+                // Check for special characters
+                if (/[^A-Za-z0-9]/.test(password)) {
+                    strength += 1;
+                    specialCheck.className = 'text-success';
+                }
+                
+                // Update meter and text
+                meter.value = strength;
+                
+                // Update strength text
+                if (strength === 0) strengthText.textContent = 'Very Weak';
+                else if (strength === 1) strengthText.textContent = 'Weak';
+                else if (strength === 2) strengthText.textContent = 'Fair';
+                else if (strength === 3) strengthText.textContent = 'Good';
+                else if (strength === 4) strengthText.textContent = 'Strong';
+                else if (strength === 5) strengthText.textContent = 'Very Strong';
+                
+                // Update text color
+                strengthText.className = strength <= 1 ? 'text-danger' : 
+                                        strength <= 3 ? 'text-warning' : 
+                                        'text-success';
+            }
+            
+            // Check if passwords match
+            function checkPasswordMatch() {
+                if (confirmInput.value === '') {
+                    passwordMatch.textContent = '';
+                    return;
+                }
+                
+                if (passwordInput.value === confirmInput.value) {
+                    passwordMatch.textContent = 'Passwords match';
+                    passwordMatch.className = 'text-success';
+                } else {
+                    passwordMatch.textContent = 'Passwords do not match';
+                    passwordMatch.className = 'text-danger';
+                }
+            }
+            
+            // Add event listeners
+            if (passwordInput) {
+                passwordInput.addEventListener('input', checkPasswordStrength);
+                passwordInput.addEventListener('input', checkPasswordMatch);
+            }
+            
+            if (confirmInput) {
+                confirmInput.addEventListener('input', checkPasswordMatch);
+            }
+        });
+        </script>
 </body>
 </html>
