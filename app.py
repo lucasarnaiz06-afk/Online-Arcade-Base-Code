@@ -48,7 +48,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(300), nullable=False)
-    coins = db.Column(db.Integer, default=100)
+    coins = db.Column(db.Integer, default=1000)
     is_admin = db.Column(db.Boolean, default=False)
     avatar = db.Column(db.String(100), default='default_avatar.png')
     bio = db.Column(db.Text, nullable=True)
