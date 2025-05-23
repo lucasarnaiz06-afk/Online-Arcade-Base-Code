@@ -151,3 +151,7 @@ body.accent-blue .bg-primary {
     background-color: #dc3545;
     border-color: #dc3545;
 }
+
+.dark-theme .table-striped > tbody > tr {
+    color: #f8f9fa; 
+}

@@ -204,6 +204,7 @@ def login():
             resend_url = url_for('resend_confirmation')
             flash(f'If you did not receive the email, <a href="{resend_url}">click here to resend</a>.', 'info')
             return redirect(url_for('login'))
+
         
         login_user(user, remember=remember)
         next_page = request.args.get('next')
