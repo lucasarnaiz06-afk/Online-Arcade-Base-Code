@@ -151,3 +151,23 @@ body.accent-blue .bg-primary {
     background-color: #dc3545;
     border-color: #dc3545;
 }
+
+.dark-theme .table-striped > tbody > tr {
+    color: #f8f9fa; 
+}
+
+.dark-theme .table td,
+.dark-theme .table th {
+    color: #f8f9fa; /* white text */
+}
+
+.dark-theme .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme table.table-striped tbody tr,
+.dark-theme table.table-hover tbody tr,
+.dark-theme table.table tbody tr td,
+.dark-theme table.table thead th {
+    color: #f8f9fa !important;
+}
