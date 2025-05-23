@@ -207,6 +207,7 @@ def login():
 
         
         login_user(user, remember=remember)
+        session['theme'] = user.theme
         next_page = request.args.get('next')
         return redirect(next_page) if next_page else redirect(url_for('home'))
     
