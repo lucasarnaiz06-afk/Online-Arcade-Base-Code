@@ -92,7 +92,11 @@
 
       </div>      
         {% if game.active %}
-        <a href="{{ url_for('mines_cashout') }}" class="btn btn-warning mt-3">💰 Cash Out</a>
+        <a href="{{ url_for('mines_cashout') }}" class="btn btn-warning mt-3">
+          💰 Cash Out ({{ (game.bet * multiplier)|int }})
+        </a>
+
+
         {% else %}
         <a href="{{ url_for('mines', reset='true') }}" class="btn btn-light mt-3">Play Again</a>
         {% endif %}
