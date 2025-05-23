@@ -54,7 +54,7 @@ class User(db.Model, UserMixin):
     is_admin = db.Column(db.Boolean, default=False)
     avatar = db.Column(db.String(100), default='default_avatar.png')
     bio = db.Column(db.Text, nullable=True)
-    theme = db.Column(db.String(20), default='light')
+    theme = db.Column(db.String(20), default='dark')
     accent_color = db.Column(db.String(20), default='blue')
     notification_settings = db.Column(db.Text, default='{"email": ["friend_requests", "game_invites", "new_games", "leaderboard_updates"], "push": ["all"]}')
     games = db.relationship('UserGame', backref='user', lazy=True)
