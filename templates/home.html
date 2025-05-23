@@ -1,7 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/theme-init.js"></script> 
+    {% if current_user.is_authenticated %}
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            const serverTheme = "{{ current_user.theme }}";
+            
+            // Always update localStorage with server theme and apply immediately
+            localStorage.setItem('theme', serverTheme);
+            
+            // Force immediate theme application
+            if (typeof applyTheme === 'function') {
+                applyTheme(serverTheme);
+            }
+        });
+    </script>
+    {% endif %}
+    <!-- Load theme logic -->
+    <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - Arcade</title>
@@ -57,60 +74,5 @@
     <footer class="bg-dark text-white text-center py-3 mt-5">
         <p>&copy; 2025 Online Arcade. All rights reserved.</p>
     </footer>
-    <!-- THIS IS THE SCRIPT (BELOW) THAT CHANGES THE LIGHT and DARK COLORS FOR THE PAGE -->
-    <script>
-        // Apply theme and accent color based on user settings
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set initial theme and accent based on user settings
-            const userTheme = "{{ current_user.theme }}";
-            
-            // Set the radio button for theme
-            if (document.getElementById(userTheme + 'Theme')) {
-                document.getElementById(userTheme + 'Theme').checked = true;
-            }
-            
-            // Apply theme to page
-            applyTheme(userTheme);
-           
-            
-            // Event listeners for theme changes (live preview)
-            document.querySelectorAll('input[name="theme"]').forEach(function(radio) {
-                radio.addEventListener('change', function() {
-                    applyTheme(this.value);
-                });
-            });
-            
-            
-            // Function to apply theme
-            function applyTheme(theme) {
-                if (theme === 'dark') {
-                    document.body.classList.add('dark-theme');
-                    // Adjust card and list group colors for dark theme
-                    document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                        item.classList.add('dark-mode');
-                    });
-                } else if (theme === 'light') {
-                    document.body.classList.remove('dark-theme');
-                    document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                        item.classList.remove('dark-mode');
-                    });
-                } else if (theme === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    if (prefersDark) {
-                        document.body.classList.add('dark-theme');
-                        document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                            item.classList.add('dark-mode');
-                        });
-                    } else {
-                        document.body.classList.remove('dark-theme');
-                        document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                            item.classList.remove('dark-mode');
-                        });
-                    }
-                }
-            }
-        });
-        </script>
-    
 </body>
 </html>

@@ -357,6 +357,7 @@ def resend_confirmation():
 def logout():
     logout_user()
     flash('You have been logged out.', 'info')
+
     return redirect(url_for('home'))
 
 @app.route('/play_game/<int:game_id>')
@@ -676,7 +677,7 @@ def change_password():
 @login_required
 def update_appearance():
     if request.method == 'POST':
-        theme = request.form.get('theme', 'light')
+        theme = request.form.get('theme')
         accent_color = request.form.get('accent_color', 'blue')
         
         current_user.theme = theme
