@@ -1531,6 +1531,6 @@ if __name__ == '__main__':
         ensure_avatar_directory_exists()
         db.create_all()
 
-    
+
 app.run(debug=True, port=8000, host='0.0.0.0')
 
