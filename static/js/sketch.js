@@ -119,7 +119,7 @@ function processPlinkoResult(x, bet) {
   let slotIndex = Math.floor((x - xOffset) / slotWidth);
   slotIndex = Math.max(0, Math.min(fixedPayouts.length - 1, slotIndex));
   let multiplier = fixedPayouts[slotIndex];
-  let payout = bet * multiplier;
+  let payout = Math.floor(bet * multiplier);
   slotAnimations[slotIndex] = 1;
 
   const csrf = document.querySelector('input[name="csrf_token"]').value;
@@ -136,7 +136,7 @@ function processPlinkoResult(x, bet) {
     .then(data => {
       if (data.success) {
         const balanceElem = document.getElementById('balance');
-        balanceElem.textContent = parseFloat(data.new_balance).toFixed(2);
+        balanceElem.textContent = data.new_balance;
 
         const plus = document.createElement("span");
         plus.textContent = ` +${payout}`;
