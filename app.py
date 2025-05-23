@@ -1295,16 +1295,16 @@ def plinko_start():
 @login_required
 def plinko_payout():
     try:
-        payout = int(float(request.form.get('payout', 0)))
+        payout = int(float(request.form.get('payout', 0)))  # Floor the payout
     except ValueError:
         return jsonify({'success': False, 'message': 'Invalid payout amount'})
 
-    if payout > 0:
-        current_user.coins += payout
-        db.session.commit()
-        return jsonify({'success': True, 'new_balance': current_user.coins})
-    
-    return jsonify({'success': False, 'message': 'Payout must be positive'})
+    if payout < 0:
+        return jsonify({'success': False, 'message': 'Payout cannot be negative'})
+
+    current_user.coins += payout
+    db.session.commit()
+    return jsonify({'success': True, 'new_balance': current_user.coins})
 
 
 @app.route("/navbar")
