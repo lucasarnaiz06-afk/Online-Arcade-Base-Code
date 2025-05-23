@@ -127,7 +127,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-ADMIN_EMAILS = {'rosui@packer.edu'} 
+ADMIN_EMAILS = {'rosui@packer.edu','juoverton@packer.edu','luarnaiz@packer.edu'} 
 
 def admin_required(f):
     @wraps(f)
@@ -363,35 +363,6 @@ def play_game(game_id):
     game = Game.query.get_or_404(game_id)
     
     return render_template(f'games/{game.name.lower().replace(" ", "_")}.html', game=game)
-
-@app.route('/submit_score/<int:game_id>', methods=['POST'])
-@login_required
-def submit_score(game_id):
-    score_value = request.form.get('score', type=int)
-    
-    if not score_value:
-        flash('Invalid score submission.', 'danger')
-        return redirect(url_for('play_game', game_id=game_id))
-    
-    new_score = Score(user_id=current_user.id, game_id=game_id, score=score_value)
-    db.session.add(new_score)
-    db.session.commit()
-    
-    flash('Score submitted successfully!', 'success')
-    return redirect(url_for('leaderboard', game_id=game_id))
-
-@app.route('/leaderboard/<int:game_id>')
-def leaderboard(game_id):
-    game = Game.query.get_or_404(game_id)
-    
-    scores = db.session.query(Score, User) \
-                      .join(User) \
-                      .filter(Score.game_id == game_id) \
-                      .order_by(Score.score.desc()) \
-                      .limit(20) \
-                      .all()
-    
-    return render_template('leaderboard.html', game=game, scores=scores)
 
 @app.route('/friends')
 @login_required
