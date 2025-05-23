@@ -1080,7 +1080,9 @@ def blackjack():
             player_hands[active_hand].append(deck.pop())
             session['player_hands'] = player_hands
             session['deck'] = deck
-            
+
+    # Render or return updated game state here
+
             # After hitting, player can no longer double or split
             session['can_split'] = False
             session['can_double'] = False
@@ -1102,6 +1104,8 @@ def blackjack():
                     
                     if all_busted:
                         # End game without playing dealer
+                        current_user.coins -= bets[active_hand]
+                        db.session.commit()
                         session['game_over'] = True
                         session['message'] = "All hands busted. Dealer doesn't need to play."
                     else:
