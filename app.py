@@ -1494,6 +1494,14 @@ def balloon_check():
     multiplier = min(1.0 + 0.04 * inflation_time**1.5, 100)
     return jsonify({'status': 'ok', 'multiplier': round(multiplier, 2)})
 
+@app.route('/leaderboard')
+def leaderboard():
+    if not current_user.is_authenticated:
+        flash("Please log in to view the leaderboard.", "warning")
+        return redirect(url_for('login'))
+
+    top_users = User.query.order_by(User.coins.desc()).limit(20).all()
+    return render_template('leaderboard.html', top_users=top_users)
 
 
 if __name__ == '__main__':
