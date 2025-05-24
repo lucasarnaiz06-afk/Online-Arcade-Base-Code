@@ -1,7 +1,32 @@
+/* Anti-flash styles - these must be at the top */
+html {
+    /* Default to light theme background immediately */
+    background-color: #212529;
+    color: #212529;
+}
+
+/* Dark theme applied to html element for immediate effect */
+html.dark-theme-loading {
+    background-color: #121212 !important;
+    color: #f8f9fa !important;
+}
+
+/* Ensure body inherits immediately and has no transition during load */
+body {
+    background-color: inherit;
+    color: inherit;
+    transition: none !important;
+}
+
+/* Re-enable transitions after page load */
+body.transitions-enabled {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
 /* Theme and accent color styles */
 body.dark-theme {
-    background-color: #121212;
-    color: #f8f9fa;
+    background-color: #121212 !important;
+    color: #f8f9fa !important;
 }
 
 .dark-theme .card {
@@ -20,8 +45,8 @@ body.dark-theme {
 }
 
 .dark-theme .list-group-item.active {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background-color: #424242;
+    border-color: #424242;
 }
 
 .dark-theme .modal-content {
@@ -89,7 +114,7 @@ body.dark-theme {
 }
 
 .dark-theme .pagination .page-item.active .page-link {
-    background-color: #0d6efd;
+    background-color: #424242;
 }
 
 .dark-theme hr {
@@ -115,16 +140,17 @@ body.dark-theme {
 body.accent-blue .list-group-item.active,
 body.accent-blue .btn-primary,
 body.accent-blue .bg-primary {
-    background-color: #0d6efd !important;
-    border-color: #0d6efd !important;
+    background-color: #717171 !important;
+    border-color: #717171 !important;
 }
+
 .dark-theme .bg-success {
-    background-color: #146c43 !important; /* darker green */
+    background-color: #717171 !important; /* darker green */
     color: #f8f9fa !important;
 }
 
 .dark-theme .bg-warning {
-    background-color: #856404 !important;
+    background-color: #717171 !important;
     color: #fff !important;
 }
 
@@ -143,8 +169,8 @@ body.accent-blue .bg-primary {
 }
 
 .dark-theme .btn-primary {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background-color: #009e03;
+    border-color: #009e03;
 }
 
 .dark-theme .btn-danger {

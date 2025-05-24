@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% if current_user.is_authenticated %}
     <script>
-    localStorage.setItem('theme', '{{ current_user.theme }}');
+        window.addEventListener('DOMContentLoaded', function () {
+            const serverTheme = "{{ current_user.theme }}";
+            localStorage.setItem('theme', serverTheme);
+            if (typeof applyTheme === 'function') {
+                applyTheme(serverTheme);
+            }
+        });
     </script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
