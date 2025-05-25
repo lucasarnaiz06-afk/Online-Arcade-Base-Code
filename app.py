@@ -1658,13 +1658,34 @@ def balloon_check():
     return jsonify({'status': 'ok', 'multiplier': round(multiplier, 2)})
 
 @app.route('/leaderboard')
+@login_required
 def leaderboard():
     if not current_user.is_authenticated:
         flash("Please log in to view the leaderboard.", "warning")
         return redirect(url_for('login'))
 
     top_users = User.query.order_by(User.coins.desc()).limit(20).all()
-    return render_template('leaderboard.html', top_users=top_users)
+    
+    # Calculate current user's ranking and stats
+    user_rank = None
+    coins_to_next_rank = 0
+    
+    # Find current user's rank among all users (not just top 20)
+    all_users_ranked = User.query.order_by(User.coins.desc()).all()
+    for i, user in enumerate(all_users_ranked, 1):
+        if user.id == current_user.id:
+            user_rank = i
+            # Calculate coins needed to reach next rank
+            if i > 1:  # If not already #1
+                coins_to_next_rank = all_users_ranked[i-2].coins - current_user.coins
+                if coins_to_next_rank < 0:
+                    coins_to_next_rank = 0
+            break
+    
+    return render_template('leaderboard.html', 
+                         top_users=top_users,
+                         user_rank=user_rank,
+                         coins_to_next_rank=coins_to_next_rank)
 
 
 if __name__ == '__main__':
