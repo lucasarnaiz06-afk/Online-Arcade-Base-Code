@@ -6,7 +6,9 @@ from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
-import os, datetime
+import os
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from werkzeug.utils import secure_filename
 import random
 import json
@@ -32,10 +34,6 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 csrf = CSRFProtect(app)
 
-
-
-
-
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -46,7 +44,7 @@ mail = Mail(app)
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.datetime.now)
+    created = db.Column(db.DateTime, default=datetime.now)
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(300), nullable=False)
@@ -60,9 +58,42 @@ class User(db.Model, UserMixin):
     games = db.relationship('UserGame', backref='user', lazy=True)
     scores = db.relationship('Score', backref='user', lazy=True)
     email_confirmed = db.Column(db.Boolean, default=False)
-    is_admin = db.Column(db.Boolean, default=False)
+    profile_picture = db.Column(db.String(255))
+    games_played = db.Column(db.Integer, default=0)
+    wins = db.Column(db.Integer, default=0)
+    high_score = db.Column(db.Integer, default=0)
+    last_login = db.Column(db.DateTime)
 
+    def get_notification_settings(self):
+        """Parse notification settings JSON"""
+        try:
+            return json.loads(self.notification_settings) if self.notification_settings else {}
+        except:
+            return {"email": [], "push": []}
 
+    def get_win_rate(self):
+        """Calculate win rate percentage"""
+        if self.games_played == 0:
+            return 0
+        return round((self.wins / self.games_played) * 100, 1)
+
+    def get_account_age(self):
+        """Get account age in a readable format"""
+        if not self.created:
+            return "Unknown"
+        
+        duration = datetime.now() - self.created
+        
+        if duration.days < 1:
+            return "Less than a day"
+        elif duration.days < 30:
+            return f"{duration.days} day{'s' if duration.days > 1 else ''}"
+        elif duration.days < 365:
+            months = duration.days // 30
+            return f"{months} month{'s' if months > 1 else ''}"
+        else:
+            years = duration.days // 365
+            return f"{years} year{'s' if years > 1 else ''}"
 
     def get_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'])
@@ -104,21 +135,22 @@ class UserGame(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
-    purchase_date = db.Column(db.DateTime, default=datetime.datetime.now)
+    purchase_date = db.Column(db.DateTime, default=datetime.now)
 
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.datetime.now)
+    date = db.Column(db.DateTime, default=datetime.now)
 
 class FriendRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     friend_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     status = db.Column(db.String(20), default='pending')  # pending, accepted, declined
-    created = db.Column(db.DateTime, default=datetime.datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 # Helper functions
@@ -209,6 +241,8 @@ def login():
         login_user(user, remember=remember)
         session['theme'] = user.theme
         next_page = request.args.get('next')
+        current_user.last_login = datetime.now()
+        db.session.commit()
         return redirect(next_page) if next_page else redirect(url_for('home'))
     
     return render_template('login.html')
@@ -452,6 +486,128 @@ def accept_friend(request_id):
     flash(f'You are now friends with {friend.username}!', 'success')
     return redirect(url_for('friends'))
 
+@app.route('/profile')
+@login_required
+def profile():
+    """Display the current user's profile"""
+    # Get user's friend count
+    friend_count = FriendRequest.query.filter(
+        ((FriendRequest.user_id == current_user.id) | (FriendRequest.friend_id == current_user.id)) &
+        (FriendRequest.status == 'accepted')
+    ).count()
+    
+    # Get recent scores/games (replace with your actual Score/Game model queries)
+    # Assuming you have a Score model - adjust based on your actual implementation
+    recent_scores = []
+    try:
+        recent_scores = current_user.scores[-5:] if hasattr(current_user, 'scores') else []
+    except:
+        recent_scores = []
+    
+    # Get recent games played (replace with your actual UserGame model queries)
+    recent_games = []
+    try:
+        recent_games = current_user.games[-5:] if hasattr(current_user, 'games') else []
+    except:
+        recent_games = []
+    
+    # Calculate additional stats
+    profile_stats = {
+        'account_age': current_user.get_account_age(),
+        'win_rate': current_user.get_win_rate(),
+        'friend_count': friend_count,
+        'total_coins': current_user.coins,
+        'games_played': current_user.games_played,
+        'wins': current_user.wins,
+        'high_score': current_user.high_score,
+        'last_login': current_user.last_login.strftime('%B %d, %Y at %I:%M %p') if current_user.last_login else 'Never'
+    }
+    
+    return render_template('profile.html', 
+                         user=current_user,
+                         stats=profile_stats,
+                         recent_scores=recent_scores,
+                         recent_games=recent_games,
+                         notification_settings=current_user.get_notification_settings())
+
+@app.route('/friend_profile/<int:friend_id>')
+@login_required
+def friend_profile(friend_id):
+    """Display a friend's profile"""
+    # Get the friend user
+    friend = User.query.get_or_404(friend_id)
+    
+    # Check if they are actually friends
+    friendship = FriendRequest.query.filter(
+        ((FriendRequest.user_id == current_user.id) & (FriendRequest.friend_id == friend_id)) |
+        ((FriendRequest.user_id == friend_id) & (FriendRequest.friend_id == current_user.id))
+    ).filter_by(status='accepted').first()
+    
+    if not friendship:
+        flash('You are not friends with this user.', 'danger')
+        return redirect(url_for('friends'))
+    
+    # Calculate friendship duration
+    friendship_date = friendship.updated_at if friendship.updated_at else friendship.created_at
+    duration = datetime.now() - friendship_date
+    
+    if duration.days < 1:
+        friendship_duration = "Less than a day"
+    elif duration.days < 30:
+        friendship_duration = f"{duration.days} day{'s' if duration.days > 1 else ''}"
+    elif duration.days < 365:
+        months = duration.days // 30
+        friendship_duration = f"{months} month{'s' if months > 1 else ''}"
+    else:
+        years = duration.days // 365
+        friendship_duration = f"{years} year{'s' if years > 1 else ''}"
+    
+    # Get recent games (you'll need to implement this based on your game tracking system)
+    # For now, this is a placeholder - replace with your actual recent games query
+    recent_games = []  # Replace with actual query
+    
+    return render_template('friend_profile.html', 
+                         friend=friend, 
+                         friendship_duration=friendship_duration,
+                         recent_games=recent_games)
+
+@app.route('/remove_friend/<int:friend_id>', methods=['POST'])
+@login_required
+def remove_friend(friend_id):
+    # Find the friendship record
+    friendship = FriendRequest.query.filter(
+        ((FriendRequest.user_id == current_user.id) & (FriendRequest.friend_id == friend_id)) |
+        ((FriendRequest.user_id == friend_id) & (FriendRequest.friend_id == current_user.id))
+    ).filter_by(status='accepted').first()
+    
+    if not friendship:
+        flash('You are not friends with this user.', 'danger')
+        return redirect(url_for('friends'))
+    
+    # Remove the friendship
+    db.session.delete(friendship)
+    db.session.commit()
+    
+    friend = User.query.get(friend_id)
+    flash(f'You have removed {friend.username} from your friends list.', 'success')
+    return redirect(url_for('friends'))
+
+@app.route('/decline_friend/<int:request_id>')
+@login_required
+def decline_friend(request_id):
+    friend_request = FriendRequest.query.get_or_404(request_id)
+    
+    if friend_request.friend_id != current_user.id:
+        flash('You are not authorized to decline this friend request.', 'danger')
+        return redirect(url_for('friends'))
+    
+    # Delete the friend request (or we could set status to 'declined' if we want to keep records)
+    db.session.delete(friend_request)
+    db.session.commit()
+    
+    flash('Friend request declined.', 'info')
+    return redirect(url_for('friends'))
+
 @app.route('/reset_request', methods=['GET', 'POST'])
 def reset_request():
     if current_user.is_authenticated:
@@ -551,7 +707,7 @@ def save_picture(form_picture):
 @login_required
 def settings():
     # Pass the current time for displaying session info
-    current_time = datetime.datetime.now()
+    current_time = datetime.now()
     
     # Load notification settings from JSON string to dict
     if current_user.notification_settings:
@@ -1435,7 +1591,7 @@ def balloon_rise():
         # Start game session
         session['balloon_game'] = {
             'bet': bet,
-            'start_time': datetime.datetime.now().timestamp(),
+            'start_time': datetime.now().timestamp(),
             'popped': False,
             'cashout': False
         }
