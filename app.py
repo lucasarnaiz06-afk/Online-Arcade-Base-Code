@@ -1475,6 +1475,7 @@ def navbar():
 
 
 @app.route('/ladder_climb', methods=['GET', 'POST'])
+@login_required
 def ladder_climb():
     if request.method == 'POST':
         bet = int(request.form.get('bet', 0))
@@ -1501,6 +1502,7 @@ def ladder_climb():
     return render_template('games/ladder_climb.html', game=game)
 
 @app.route('/ladder_pick/<choice>', methods=['POST'])
+@login_required
 def ladder_pick(choice):
     game = session.get('ladder_game')
     if not game or not game['active']:
@@ -1527,6 +1529,7 @@ def ladder_pick(choice):
     return redirect(url_for('ladder_climb'))
 
 @app.route('/ladder_cashout')
+@login_required
 def ladder_cashout():
     game = session.get('ladder_game')
     if game and game['active']:
@@ -1541,6 +1544,7 @@ def ladder_cashout():
     return redirect(url_for('ladder_climb'))
 
 @app.route('/ladder_climb/reset')
+@login_required
 def ladder_reset():
     session.pop('ladder_game', None)
     return redirect(url_for('ladder_climb'))
