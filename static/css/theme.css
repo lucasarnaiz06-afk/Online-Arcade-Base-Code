@@ -1,4 +1,4 @@
-/* Anti-flash styles - these must be at the top */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 html {
     /* Default to light theme background immediately */
     background-color: #212529;
@@ -196,4 +196,99 @@ body.accent-blue .bg-primary {
 .dark-theme table.table tbody tr td,
 .dark-theme table.table thead th {
     color: #f8f9fa !important;
+}
+
+.custom-navbar {
+  background: linear-gradient(135deg, #1f1f2e, #2b2d42);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+  font-family: 'Orbitron', monospace;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  position: sticky;
+  top: 0;
+  z-index: 1050; /* higher than other elements */
+}
+
+.custom-navbar .nav-link,
+.custom-navbar .navbar-brand,
+.custom-navbar .dropdown-item {
+  color: rgba(255, 255, 255, 0.9);
+  transition: color 0.3s ease;
+}
+
+.custom-navbar .nav-link:hover,
+.custom-navbar .dropdown-item:hover {
+  color: #ffd700;
+}
+
+.custom-navbar .nav-link.active {
+  color: #ffd700 !important;
+  font-weight: bold;
+}
+
+.custom-navbar .dropdown-menu {
+  background: #2b2d42;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.glow-text {
+  background: linear-gradient(45deg, #ffd700, #ffed4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+
+.custom-navbar {
+  background: linear-gradient(135deg, #1f1f2e, #2b2d42);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+  font-family: 'Orbitron', monospace;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+.custom-navbar .nav-link,
+.custom-navbar .navbar-brand,
+.custom-navbar .dropdown-item {
+  color: rgba(255, 255, 255, 0.9);
+  transition: color 0.3s ease;
+}
+
+.custom-navbar .nav-link:hover,
+.custom-navbar .dropdown-item:hover {
+  color: #ffd700;
+}
+
+.custom-navbar .nav-link.active {
+  color: #ffd700 !important;
+  font-weight: bold;
+}
+
+.custom-navbar .dropdown-menu {
+  background: #2b2d42;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.glow-text {
+  background: linear-gradient(45deg, #ffd700, #ffed4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.coin-text {
+  color: #ffdf00 !important; /* Bright yellow */
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.coin-text i.bi-coin {
+  color: #ffdf00 !important;
 }
