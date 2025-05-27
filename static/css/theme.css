@@ -292,3 +292,40 @@ body.accent-blue .bg-primary {
 .coin-text i.bi-coin {
   color: #ffdf00 !important;
 }
+
+.custom-flash {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  color: white;
+  border-radius: 12px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, rgba(40,167,69,0.3), rgba(32,201,151,0.15));
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 0 15px rgba(40,167,69,0.3);
+  animation: flashFadeIn 0.7s ease-out;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #28a745aa, #20c99788);
+  border-color: #20c99788;
+  box-shadow: 0 0 20px rgba(40,167,69,0.4);
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, #ffc107cc, #ffdd57aa);
+  border-color: #ffc10799;
+  box-shadow: 0 0 20px rgba(255,193,7,0.3);
+}
+
+@keyframes flashFadeIn {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
