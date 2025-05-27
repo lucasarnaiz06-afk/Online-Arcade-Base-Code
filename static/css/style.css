@@ -4,7 +4,7 @@ settings-sidebar .list-group-item {
 }
 
 .settings-sidebar .list-group-item.active {
-    border-left: 3px solid #0d6efd;
+    border-left: 3px solid #717171;
     background-color: rgba(13, 110, 253, 0.1);
     color: #0d6efd;
 }
@@ -142,8 +142,8 @@ body.dark-theme {
 }
 
 .dark-theme .list-group-item.active {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background-color: #e5cc28;
+    border-color: #e5cc28;
 }
 
 .dark-theme .modal-content {
@@ -172,8 +172,8 @@ body.dark-theme {
 body.accent-blue .list-group-item.active,
 body.accent-blue .btn-primary,
 body.accent-blue .bg-primary {
-    background-color: #0d6efd !important;
-    border-color: #0d6efd !important;
+    background-color: #e5cc28 !important;
+    border-color: #e5cc28 !important;
 }
 
  

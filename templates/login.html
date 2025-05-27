@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Arcade</title>
@@ -20,11 +21,12 @@
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
                                 {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                                    <div class="alert alert-{{ category }} mt-2" role="alert">
+                                        {{ message|safe }}
+                                    </div>
                                 {% endfor %}
                             {% endif %}
                         {% endwith %}
-
                         <form method="POST" action="{{ url_for('login') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="mb-3">

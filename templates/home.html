@@ -1,7 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/theme-init.js"></script> 
+    {% if current_user.is_authenticated %}
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            const serverTheme = "{{ current_user.theme }}";
+            
+            // Always update localStorage with server theme and apply immediately
+            localStorage.setItem('theme', serverTheme);
+            
+            // Force immediate theme application
+            if (typeof applyTheme === 'function') {
+                applyTheme(serverTheme);
+            }
+        });
+    </script>
+    {% endif %}
+    <!-- Load theme logic -->
+    <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - Arcade</title>
@@ -23,94 +40,122 @@
             {% endif %}
         {% endwith %}
         
-        <div class="jumbotron p-4 bg-light rounded-3">
-            <div class="container-fluid py-5">
-                <h1 class="display-5 fw-bold">Welcome to Online Arcade!</h1>
-                <p class="col-md-8 fs-4">Play classic games, compete with friends, and climb the leaderboards.</p>
+        <div class="card mb-4">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-controller" style="font-size: 4rem; color: #0d6efd;"></i>
+                <h1 class="display-5 fw-bold mt-3">Welcome to Online Arcade!</h1>
+                <p class="fs-4 text-muted mb-4">Play classic games, compete with friends, and climb the leaderboards.</p>
                 {% if not current_user.is_authenticated %}
-                    <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}">Get Started</a>
+                    <a class="btn btn-primary btn-lg me-3" href="{{ url_for('register') }}">
+                        <i class="bi bi-person-plus"></i> Get Started
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg" href="{{ url_for('login') }}">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
                 {% else %}
-                    <a class="btn btn-primary btn-lg" href="{{ url_for('games') }}">Browse Games</a>
+                    <a class="btn btn-primary btn-lg me-3" href="{{ url_for('games') }}">
+                        <i class="bi bi-joystick"></i> Browse Games
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg" href="{{ url_for('leaderboard') }}">
+                        <i class="bi bi-trophy"></i> View Leaderboard
+                    </a>
                 {% endif %}
             </div>
         </div>
         
-        <div class="row">
-            {% for game in games %}
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100">
-                        <img src="{{ url_for('static', filename='images/' + game.icon) }}" class="card-img-top" alt="{{ game.name }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ game.name }}</h5>
-                            <p class="card-text">{{ game.description }}</p>
-                        </div>
-                        <div class="card-footer">
-                            <a href="{{ url_for('play_game', game_id=game.id) }}" class="btn btn-primary">Play Now</a>
-                            <a href="{{ url_for('leaderboard', game_id=game.id) }}" class="btn btn-outline-primary">Leaderboard</a>
+        {% if current_user.is_authenticated %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-person-circle"></i> Welcome back, {{ current_user.username }}!</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h4 class="card-title text-warning">{{ current_user.coins or 0 }}</h4>
+                                        <p class="card-text">Your Coins</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h4 class="card-title text-primary">{{ current_user.games_played or 0 }}</h4>
+                                        <p class="card-text">Games Played</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h4 class="card-title text-success">{{ current_user.wins or 0 }}</h4>
+                                        <p class="card-text">Wins</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h4 class="card-title text-info">{{ current_user.high_score or 0 }}</h4>
+                                        <p class="card-text">High Score</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-joystick"></i> Featured Games</h5>
+            </div>
+            <div class="card-body">
+                {% if games %}
+                    <div class="row">
+                        {% for game in games %}
+                            <div class="col-md-3 mb-4">
+                                <div class="card h-100">
+                                    <img src="{{ url_for('static', filename='images/' + game.icon) }}" 
+                                         class="card-img-top" 
+                                         alt="{{ game.name }}"
+                                         style="height: 200px; object-fit: cover;">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">{{ game.name }}</h5>
+                                        <p class="card-text text-muted">{{ game.description }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ url_for('play_game', game_id=game.id) }}" class="btn btn-primary">
+                                                <i class="bi bi-play-fill"></i> Play Now
+                                            </a>
+                                            <a href="{{ url_for('leaderboard', game_id=game.id) }}" class="btn btn-outline-primary">
+                                                <i class="bi bi-trophy"></i> Leaderboard
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-joystick" style="font-size: 3rem; color: #6c757d;"></i>
+                        <h5 class="mt-3 text-muted">No Games Available</h5>
+                        <p class="text-muted fst-italic">Check back soon for exciting games to play!</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
     
     <footer class="bg-dark text-white text-center py-3 mt-5">
         <p>&copy; 2025 Online Arcade. All rights reserved.</p>
     </footer>
-    <!-- THIS IS THE SCRIPT (BELOW) THAT CHANGES THE LIGHT and DARK COLORS FOR THE PAGE -->
-    <script>
-        // Apply theme and accent color based on user settings
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set initial theme and accent based on user settings
-            const userTheme = "{{ current_user.theme }}";
-            
-            // Set the radio button for theme
-            if (document.getElementById(userTheme + 'Theme')) {
-                document.getElementById(userTheme + 'Theme').checked = true;
-            }
-            
-            // Apply theme to page
-            applyTheme(userTheme);
-           
-            
-            // Event listeners for theme changes (live preview)
-            document.querySelectorAll('input[name="theme"]').forEach(function(radio) {
-                radio.addEventListener('change', function() {
-                    applyTheme(this.value);
-                });
-            });
-            
-            
-            // Function to apply theme
-            function applyTheme(theme) {
-                if (theme === 'dark') {
-                    document.body.classList.add('dark-theme');
-                    // Adjust card and list group colors for dark theme
-                    document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                        item.classList.add('dark-mode');
-                    });
-                } else if (theme === 'light') {
-                    document.body.classList.remove('dark-theme');
-                    document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                        item.classList.remove('dark-mode');
-                    });
-                } else if (theme === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    if (prefersDark) {
-                        document.body.classList.add('dark-theme');
-                        document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                            item.classList.add('dark-mode');
-                        });
-                    } else {
-                        document.body.classList.remove('dark-theme');
-                        document.querySelectorAll('.card, .list-group-item').forEach(item => {
-                            item.classList.remove('dark-mode');
-                        });
-                    }
-                }
-            }
-        });
-        </script>
-    
 </body>
 </html>
