@@ -159,7 +159,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-ADMIN_EMAILS = {'rosui@packer.edu','juoverton@packer.edu','luarnaiz@packer.edu'} 
+ADMIN_EMAILS = {'rosui@packer.edu','luarnaiz@packer.edu'} 
 
 def admin_required(f):
     @wraps(f)
@@ -983,37 +983,78 @@ def mines():
         revealed = len(game['safe_revealed'])
         t = game['grid_size']
         m = game['mines']
-        s=t+m
+        s = t - m  # Fix: should be t - m (total safe tiles)
+        
         multiplier = 1.0
         for i in range(revealed):
-            multiplier *= (s - i) / (t - i)
+            # Calculate multiplier based on probability
+            multiplier *= (s - i) / (s - i - 1) if (s - i - 1) > 0 else 1.0
 
         # Ensure multiplier never drops below 1.0 if at least 1 safe tile was hit
         if revealed > 0 and multiplier < 1.0:
             multiplier = 1.0
 
-
     return render_template('games/mines.html', game=game, current_user=current_user, multiplier=multiplier)
 
 
-@app.route('/games/mines/pick/<int:tile>')
+@app.route('/games/mines/pick/<int:tile>', methods=['POST'])
 @login_required
 def mines_pick(tile):
     game = session.get('mines_game')
     if not game or not game['active']:
-        return redirect(url_for('mines'))
+        return jsonify({'success': False, 'error': 'No active game'})
+
+    # Ensure mine positions are integers
+    game['mine_positions'] = [int(p) for p in game['mine_positions']]
+    game['safe_revealed'] = [int(p) for p in game['safe_revealed']]
 
     if tile in game['safe_revealed']:
-        return redirect(url_for('mines'))
+        return jsonify({'success': False, 'error': 'Tile already revealed'})
 
-    if tile in game['mine_positions']:
+    is_mine = tile in game['mine_positions']
+    
+    if is_mine:
         game['active'] = False
-    else:
-        game['safe_revealed'].append(tile)
+        session['mines_game'] = game
+        
+        return jsonify({
+            'success': True,
+            'is_mine': True,
+            'mine_positions': game['mine_positions'],
+            'game_over': True
+        })
+
+    game['safe_revealed'].append(tile)
+
+    # Multiplier calculation (simplified + corrected)
+    revealed = len(game['safe_revealed'])
+    t = game['grid_size']
+    m = game['mines']
+    s = t - m
+
+    multiplier = 1.0
+    for i in range(revealed):
+        remaining_safe = s - i
+        remaining_total = t - i
+        multiplier *= remaining_total / remaining_safe
+
+    won = revealed == s
+    if won:
+        game['active'] = False
 
     session['mines_game'] = game
-    return redirect(url_for('mines'))
 
+    return jsonify({
+        'success': True,
+        'is_mine': False,
+        'safe_revealed': revealed,
+        'multiplier': multiplier,
+        'payout': game['bet'] * multiplier,
+        'won': won,
+        'game_over': won
+    })
+
+    
 @app.route('/games/mines/cashout')
 @login_required
 def mines_cashout():
@@ -1023,18 +1064,26 @@ def mines_cashout():
 
     # Extract game data
     revealed = len(game['safe_revealed'])
-    t = game['grid_size']
+    t = game['grid_size']  # 25
     m = game['mines']
     bet = game['bet']
-    s=t+m
-    multiplier = 1.0
-    for i in range(revealed):
-        multiplier *= (s - i) / (t - i)
-
-        # Ensure multiplier never drops below 1.0 if at least 1 safe tile was hit
-    if revealed > 0 and multiplier < 1.0:
+    
+    # Better multiplier calculation
+    if revealed == 0:
         multiplier = 1.0
-
+    else:
+        # Each revealed safe tile multiplies the risk
+        safe_total = t - m
+        multiplier = 1.0
+        for i in range(revealed):
+            # Probability of avoiding mines gets lower with each reveal
+            remaining_safe = safe_total - i
+            remaining_total = t - i
+            multiplier *= remaining_total / remaining_safe
+    
+    # Ensure minimum multiplier
+    if multiplier < 1.0:
+        multiplier = 1.0
 
     # Compute winnings and update user balance
     winnings = int(bet * multiplier)
@@ -1043,9 +1092,8 @@ def mines_cashout():
 
     # End game and clear session
     session.pop('mines_game', None)
-    print(winnings)
-    print(multiplier)
-    print(bet)
+    flash(f"Cashed out for {winnings} coins!", "success")
+    
     return redirect(url_for('mines'))
 
 

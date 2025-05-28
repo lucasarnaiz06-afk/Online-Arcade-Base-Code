@@ -1,0 +1,424 @@
+/* mines.css - Dedicated CSS for Mines Game */
+
+/* Mines Grid Layout */
+.mines-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+/* Individual Mine Tiles */
+.mine-tile {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-decoration: none;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    position: relative;
+    user-select: none;
+    min-height: 60px;
+}
+
+.mine-tile:hover:not(.revealed):not(.mine):not(.selected):not(.loading) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    text-decoration: none;
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* NEW: Selected state for immediate visual feedback */
+.mine-tile.selected {
+    background: rgba(255, 215, 0, 0.4);
+    border-color: #ffd700;
+    transform: scale(0.95);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    color: white;
+}
+
+.mine-tile.revealed {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border-color: #20c997;
+    cursor: default;
+    transform: scale(1.05);
+}
+
+.mine-tile.mine {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    color: white;
+    border-color: #e74c3c;
+    animation: explode 0.5s ease-out;
+    cursor: default;
+}
+
+.mine-tile.loading {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: #ffd700;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.mine-tile.clicked {
+    transform: scale(0.95);
+}
+
+/* Mine Tile Animations */
+@keyframes explode {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Mines Statistics Display */
+.mines-stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.mines-stats .stat-item {
+    flex: 1;
+}
+
+/* Multiplier Display */
+.multiplier-display {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    display: inline-block;
+    margin: 10px 0;
+    box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+
+.multiplier-display.glow {
+    animation: multiplier-glow 0.5s ease-out;
+}
+
+@keyframes multiplier-glow {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.6);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+    }
+}
+
+/* Game Over Overlay */
+.game-over-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    z-index: 10;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Cash Out Section (Mines-specific styling) */
+.cash-out-section {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.cash-out-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.cash-out-amount {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.btn-cash-out {
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    padding: 10px 20px;
+}
+
+.btn-cash-out:hover {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-cash-out:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Particle Effects for Mines */
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #ffd700;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: mine-particle 2s linear forwards;
+}
+
+@keyframes mine-particle {
+    0% { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+    }
+    100% { 
+        opacity: 0; 
+        transform: translateY(-50px) scale(0); 
+    }
+}
+
+/* Ripple Effect for Tile Clicks */
+@keyframes ripple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Welcome Screen for Mines */
+.welcome-description {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Responsive Design for Mines */
+@media (max-width: 768px) {
+    .mines-grid {
+        max-width: 320px;
+        gap: 8px;
+        padding: 15px;
+    }
+
+    .mine-tile {
+        min-height: 50px;
+        font-size: 1rem;
+    }
+
+    .mines-stats {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .multiplier-display {
+        font-size: 1rem;
+        padding: 8px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mines-grid {
+        max-width: 280px;
+        gap: 6px;
+        padding: 12px;
+    }
+
+    .mine-tile {
+        min-height: 45px;
+        font-size: 0.9rem;
+    }
+
+    .mines-stats .stat-item {
+        margin-bottom: 10px;
+    }
+}
+
+/* Loading States */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Form Enhancements for Mines */
+.start-game-form .form-group {
+    margin-bottom: 25px;
+}
+
+.start-game-form .btn-start {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    border-radius: 12px;
+    padding: 15px 25px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.start-game-form .btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40,167,69,0.3);
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    color: white;
+}
+
+/* Game Over Section */
+.game-over-section {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+}
+
+.game-over-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+/* Copied from ladder.css to remove dependency */
+
+.game-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+  min-height: 600px;
+}
+
+.game-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.game-card {
+  background: rgba(0,0,0,0.2);
+  border-radius: 15px;
+  padding: 25px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+  position: relative;
+  z-index: 1;
+  color: white;
+}
+
+.info-panel {
+  background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  border-radius: 15px;
+  padding: 25px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  background: linear-gradient(45deg, #ffd700, #ffed4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.welcome-icon {
+  font-size: 5rem;
+  margin-bottom: 30px;
+  background: linear-gradient(45deg, #ffd700, #ffed4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}

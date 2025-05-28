@@ -15,88 +15,15 @@
   <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <title>💣 Mines - Arcade</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ladder.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mines.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-  <style>
-    .mines-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      max-width: 400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    .mine-tile {
-      aspect-ratio: 1;
-      background: var(--bs-light);
-      color: var(--bs-dark);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 1.2rem;
-      text-decoration: none;
-      border: 2px solid transparent;
-      transition: all 0.2s ease;
-      min-height: 60px;
-    }
-    
-    .mine-tile:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      text-decoration: none;
-      color: var(--bs-dark);
-    }
-    
-    .mine-tile.revealed {
-      background: var(--bs-success);
-      color: white;
-      border-color: var(--bs-success);
-    }
-    
-    .mine-tile.mine {
-      background: var(--bs-danger);
-      color: white;
-      border-color: var(--bs-danger);
-      animation: explode 0.5s ease-out;
-    }
-    
-    @keyframes explode {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-    
-    .mines-stats {
-      display: flex;
-      justify-content: space-around;
-      margin: 20px 0;
-      text-align: center;
-    }
-    
-    .mines-stats .stat-item {
-      flex: 1;
-    }
-    
-    .multiplier-display {
-      background: linear-gradient(45deg, #ffd700, #ffed4e);
-      color: #000;
-      padding: 10px 20px;
-      border-radius: 25px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      display: inline-block;
-      margin: 10px 0;
-      box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
-    }
-  </style>
 </head>
 <body>
   {% include 'navbar.html' %}
@@ -264,11 +191,13 @@
                 {% endif %}
               </div>
 
-              <div class="mines-grid">
+              <div class="mines-grid" id="minesGrid">
                 {% for i in range(game.grid_size) %}
                   {% set revealed = i in game.safe_revealed %}
                   {% set mine_hit = not game.active and i in game.mine_positions %}
-                  <a href="{{ url_for('mines_pick', tile=i) }}" class="mine-tile {% if revealed %}revealed{% elif mine_hit %}mine{% endif %}">
+                  <div class="mine-tile {% if revealed %}revealed{% elif mine_hit %}mine{% endif %}" 
+                      data-tile="{{ i }}">
+
                     {% if revealed %}
                       ✅
                     {% elif mine_hit %}
@@ -276,7 +205,7 @@
                     {% else %}
                       ?
                     {% endif %}
-                  </a>
+                  </div>
                 {% endfor %}
               </div>
 
@@ -312,5 +241,10 @@
   <footer class="bg-dark text-white text-center py-3 mt-5">
     <p>&copy; 2025 Online Arcade. All rights reserved.</p>
   </footer>
+
+  <script>
+      window.gameActive = /*{% if game and game.active %}*/true/*{% else %}*//*false*//*{% endif %}*/;
+  </script>
+<script src="{{ url_for('static', filename='js/mines.js') }}"></script>
 </body>
 </html>
