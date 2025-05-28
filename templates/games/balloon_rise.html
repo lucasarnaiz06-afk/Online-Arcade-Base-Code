@@ -20,12 +20,142 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* Balloon Rise Game Styling */
+        .balloon-game-container {
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .balloon-game-container h1 {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ffd700, #ffed4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .balloon-game-container p {
+            font-family: 'Orbitron', monospace;
+            font-weight: 400;
+        }
+        
+        .balloon-game-container #multiplier {
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ffd700, #ffed4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s ease;
+        }
+        
+        .balloon-game-container #multiplier:hover {
+            transform: scale(1.05);
+        }
+        
+        .balloon-game-container #multiplier:active {
+            transform: scale(0.98);
+        }
+        
+        .balloon-game-container button,
+        .balloon-game-container input {
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+        }
+        
+        .balloon-game-container .btn {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .balloon-game-container .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .balloon-game-container .form-control {
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        .balloon-game-container .form-control:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: #ffd700;
+            box-shadow: 0 0 0 0.2rem rgba(255,215,0,0.25);
+            color: inherit;
+        }
+        
+        .balloon-game-container .text-success {
+            font-weight: 700;
+        }
+        
+        .balloon-game-container .text-danger {
+            font-weight: 700;
+        }
+        
+        .balloon-game-container .text-muted,
+        .balloon-game-container .text-info {
+            font-weight: 400;
+        }
+        
+        /* Enhanced jumbotron styling */
+        .balloon-jumbotron {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .balloon-jumbotron::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .balloon-jumbotron .container-fluid {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Dark theme adjustments */
+        .dark-theme .balloon-game-container .form-control {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .dark-theme .balloon-game-container .form-control:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: #ffd700;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     {% include 'navbar.html' %}
     
-    <div class="container mt-4">
+    <div class="container mt-4 balloon-game-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -34,7 +164,7 @@
             {% endif %}
         {% endwith %}
 
-        <div class="jumbotron p-4 bg-light rounded-3 text-center">
+        <div class="jumbotron p-4 balloon-jumbotron rounded-3 text-center text-white">
             <div class="container-fluid py-4">
                 <h1 class="display-4 fw-bold">🎈 Balloon Rise</h1>
                 <p class="fs-5 mb-4">Watch the multiplier rise — but cash out before the balloon pops!</p>
