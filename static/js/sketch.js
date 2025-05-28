@@ -39,7 +39,7 @@ function setup() {
   let slotWidth = width * 0.9 / slotCount;
   let xOffset = width * 0.05;
   
-
+  
   
   const container = document.getElementById("plinko-button-wrapper");
   const dropBtn = createButton('Drop Ball');
@@ -71,6 +71,56 @@ function setup() {
         });
     }
   });
+
+  const autoDropBtn = createButton('Auto Drop');
+  autoDropBtn.parent(container);
+  autoDropBtn.id('auto-drop-button');
+  autoDropBtn.class('btn btn-success ms-2');
+
+  autoDropBtn.mousePressed(() => {
+    const bet = getCurrentBet();
+    const numBalls = parseInt(document.getElementById("num-balls").value || "1");
+    const totalCost = bet * numBalls;
+
+    if (!topPlinkoPos || isNaN(numBalls) || numBalls < 1) {
+      alert("Enter a valid number of balls.");
+      return;
+    }
+
+    if (currentUserCoins() < totalCost) {
+      alert("Insufficient balance for that many balls.");
+      return;
+    }
+
+    const csrf = document.querySelector('input[name="csrf_token"]').value;
+
+    // Send a single POST to deduct the full amount
+    fetch('/games/plinko/start', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf },
+      body: new URLSearchParams({
+        'csrf_token': csrf,
+        'bet_amount': totalCost, // Total cost upfront
+        'auto_drop': true
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('balance').textContent = data.new_balance;
+        for (let i = 0; i < numBalls; i++) {
+          let jitter = random(-5, 5);
+          setTimeout(() => {
+            particles.push(new Particle(topPlinkoPos.x + jitter, topPlinkoPos.y - 90, 5));
+          }, i * 250); // Delay each drop
+        }
+      } else {
+        alert(data.message);
+      }
+    });
+  });
+
+
 }
 
 function draw() {

@@ -1441,17 +1441,21 @@ def plinko_play():
 @app.route('/games/plinko/start', methods=['POST'])
 @login_required
 def plinko_start():
-    try:
-        bet = int(request.form.get('bet_amount', 0))
-    except (ValueError, TypeError):
-        return jsonify(success=False, message="Invalid bet."), 400
+    bet_amount = int(request.form.get('bet_amount', 0))
+    auto_drop = request.form.get('auto_drop', 'false') == 'true'
 
-    if bet <= 0 or bet > current_user.coins:
-        return jsonify(success=False, message="Invalid bet amount."), 400
+    if bet_amount <= 0:
+        return jsonify(success=False, message="Invalid bet.")
 
-    current_user.coins -= bet
+    if current_user.coins < bet_amount:
+        return jsonify(success=False, message="Insufficient balance.")
+
+    # Deduct total bet amount (either for 1 ball or many)
+    current_user.coins -= bet_amount
     db.session.commit()
+
     return jsonify(success=True, new_balance=current_user.coins)
+
 
 @app.route('/games/plinko/payout', methods=['POST'])
 @login_required
