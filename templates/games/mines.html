@@ -1,107 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  {% if current_user.is_authenticated %}
   <script>
-    localStorage.setItem('theme', '{{ current_user.theme }}');
-    </script>
-    <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
+      window.addEventListener('DOMContentLoaded', function () {
+          const serverTheme = "{{ current_user.theme }}";
+          localStorage.setItem('theme', serverTheme);
+          if (typeof applyTheme === 'function') {
+              applyTheme(serverTheme);
+          }
+      });
+  </script>
+  {% endif %}
+  <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <meta charset="UTF-8">
-  <title>Mines</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💣 Mines - Arcade</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ladder.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   <style>
-    body {
-      background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-    }
-    .grid {
+    .mines-grid {
       display: grid;
-      grid-template-columns: repeat(5, 60px);
+      grid-template-columns: repeat(5, 1fr);
       gap: 10px;
-      justify-content: center;
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
     }
-    .tile {
-      width: 60px;
-      height: 60px;
-      background: #eee;
-      color: black;
+    
+    .mine-tile {
+      aspect-ratio: 1;
+      background: var(--bs-light);
+      color: var(--bs-dark);
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 8px;
       font-weight: bold;
+      font-size: 1.2rem;
+      text-decoration: none;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      min-height: 60px;
     }
-    .tile.revealed {
-      background: #4caf50;
+    
+    .mine-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-decoration: none;
+      color: var(--bs-dark);
     }
-    .tile.mine {
-      background: #dc3545;
+    
+    .mine-tile.revealed {
+      background: var(--bs-success);
       color: white;
+      border-color: var(--bs-success);
+    }
+    
+    .mine-tile.mine {
+      background: var(--bs-danger);
+      color: white;
+      border-color: var(--bs-danger);
+      animation: explode 0.5s ease-out;
+    }
+    
+    @keyframes explode {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    .mines-stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .mines-stats .stat-item {
+      flex: 1;
+    }
+    
+    .multiplier-display {
+      background: linear-gradient(45deg, #ffd700, #ffed4e);
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      display: inline-block;
+      margin: 10px 0;
+      box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
     }
   </style>
 </head>
 <body>
   {% include 'navbar.html' %}
-  <div class="container text-center mt-5">
-    <h1>💣 Mines</h1>
-    {% if not game %}
-      <form method="POST" class="mt-4">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="mb-3">
-          <label>Enter Bet (You have {{ current_user.coins }}):</label>
-          <input type="number" name="bet" class="form-control text-center" min="1" max="{{ current_user.coins }}" required>
-        </div>
-        <div class="mb-3">
-          <label># of Mines (1–24):</label>
-          <input type="number" name="mines" class="form-control text-center" min="1" max="24" required>
-        </div>
-        <button class="btn btn-success">Start Game</button>
-      </form>
-    {% else %}
-      <div class="grid mt-4">
-        {% for i in range(game.grid_size) %}
-          {% set revealed = i in game.safe_revealed %}
-          {% set mine_hit = not game.active and i in game.mine_positions %}
-          <a href="{{ url_for('mines_pick', tile=i) }}" style="text-decoration: none;">
-            <div class="tile {% if revealed %}revealed{% elif mine_hit %}mine{% endif %}">
-              {% if revealed %}
-                ✅
-              {% elif mine_hit %}
-                💣
-              {% else %}
-                ?
+
+  <div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="custom-flash alert-{{ category }} alert-dismissible fade show" role="alert">
+            <i class="bi bi-stars me-2"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-4">
+        <div class="info-panel">
+          <h5 class="mb-3">
+            <i class="bi bi-radioactive"></i> Game Info
+          </h5>
+          
+          {% if game %}
+            <div class="text-center mb-4">
+              <h4 class="mb-3">💣 Mines</h4>
+              <div class="row">
+                <div class="col-6">
+                  <div class="stat-item">
+                    <div class="stat-value">{{ game.safe_revealed|length }}</div>
+                    <div class="stat-label">Safe Tiles</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="stat-item">
+                    <div class="stat-value">{{ game.mines }}</div>
+                    <div class="stat-label">Mines</div>
+                  </div>
+                </div>
+              </div>
+              {% if multiplier is not none %}
+                <div class="mt-3">
+                  <div class="stat-item">
+                    <div class="stat-value multiplier-glow">{{ "%.2f"|format(multiplier) }}x</div>
+                    <div class="stat-label">Multiplier</div>
+                  </div>
+                </div>
               {% endif %}
             </div>
-          </a>
-        {% endfor %}
+          {% else %}
+            <div class="text-center">
+              <i class="bi bi-controller welcome-icon"></i>
+              <h4 class="mb-3">💣 Mines</h4>
+              <p class="text-muted">Avoid the mines and reveal safe tiles to win big!</p>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if current_user.is_authenticated %}
+        <div class="info-panel mt-3">
+          <h5 class="mb-3">
+            <i class="bi bi-wallet2"></i> Your Balance
+          </h5>
+          <div class="text-center">
+            <div class="stat-value">{{ current_user.coins }}</div>
+            <div class="stat-label">Coins Available</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if game and game.active and multiplier is not none %}
+        <div class="cash-out-section">
+          <div class="mb-3">
+            <small>Cash out for:</small>
+            <div class="cash-out-amount">{{ (game.bet * multiplier)|int }} Coins</div>
+          </div>
+          <div class="d-grid">
+            <a href="{{ url_for('mines_cashout') }}" class="btn btn-cash-out">
+              <i class="bi bi-piggy-bank"></i> Cash Out
+            </a>
+          </div>
+        </div>
+        {% endif %}
       </div>
-      <div class="mt-3">
-        <p>Revealed: {{ game.safe_revealed|length }} / {{ game.grid_size - game.mines }} safe tiles</p>
-        
-        {% if multiplier is not none %}
-            <p><strong>Multiplier:</strong> {{ "%.2f"|format(multiplier) }}x</p>
-        {% endif %}
 
+      <!-- Main Game Area -->
+      <div class="col-md-8">
+        <div class="game-container">
+          {% if not game %}
+            <!-- Start Game Form -->
+            <div class="game-card">
+              <div class="start-game-form">
+                <h2>💣 Start Mining</h2>
+                
+                <div class="welcome-description mb-4">
+                  Navigate through the minefield by revealing safe tiles! Each safe tile increases your multiplier, 
+                  but hit a mine and it's game over. Cash out anytime to secure your winnings!
+                </div>
 
-        {% if multiplier is not none %}
-            <p>Current Multiplier: {{ "%.2f"|format(multiplier) }}x</p>
-        {% endif %}
+                <form method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="bi bi-coin"></i> Enter Bet Amount
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-coin"></i>
+                      </span>
+                      <input type="number" name="bet" class="form-control" 
+                             min="1" max="{{ current_user.coins if current_user.is_authenticated else 100 }}" 
+                             placeholder="Enter your bet..." required>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                      <div class="form-text">
+                        You have {{ current_user.coins }} coins available
+                      </div>
+                    {% endif %}
+                  </div>
 
-      </div>      
-        {% if game.active %}
-        <a href="{{ url_for('mines_cashout') }}" class="btn btn-warning mt-3">
-          💰 Cash Out ({{ (game.bet * multiplier)|int }})
-        </a>
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="bi bi-radioactive"></i> Number of Mines
+                    </label>
+                    <input type="number" name="mines" class="form-control" 
+                           min="1" max="24" placeholder="Enter number of mines (1-24)..." required>
+                    <div class="form-text">
+                      More mines = Higher potential rewards but greater risk!
+                    </div>
+                  </div>
 
+                  <div class="d-grid">
+                    <button class="btn btn-start btn-lg">
+                      <i class="bi bi-play-fill"></i> Start Mining
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          {% else %}
+            <!-- Active Game -->
+            <div class="game-card">
+              <div class="text-center mb-4">
+                <div class="mines-stats">
+                  <div class="stat-item">
+                    <div class="stat-value">{{ game.safe_revealed|length }}</div>
+                    <div class="stat-label">Safe Revealed</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-value">{{ game.grid_size - game.mines }}</div>
+                    <div class="stat-label">Total Safe</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-value">{{ game.mines }}</div>
+                    <div class="stat-label">Mines Hidden</div>
+                  </div>
+                </div>
+                
+                {% if multiplier is not none %}
+                  <div class="multiplier-display">
+                    {{ "%.2f"|format(multiplier) }}x Multiplier
+                  </div>
+                {% endif %}
+              </div>
 
-        {% else %}
-        <a href="{{ url_for('mines', reset='true') }}" class="btn btn-light mt-3">Play Again</a>
-        {% endif %}
+              <div class="mines-grid">
+                {% for i in range(game.grid_size) %}
+                  {% set revealed = i in game.safe_revealed %}
+                  {% set mine_hit = not game.active and i in game.mine_positions %}
+                  <a href="{{ url_for('mines_pick', tile=i) }}" class="mine-tile {% if revealed %}revealed{% elif mine_hit %}mine{% endif %}">
+                    {% if revealed %}
+                      ✅
+                    {% elif mine_hit %}
+                      💣
+                    {% else %}
+                      ?
+                    {% endif %}
+                  </a>
+                {% endfor %}
+              </div>
 
-    {% endif %}
+              {% if not game.active %}
+                <div class="game-over-section">
+                  <div class="game-over-icon">
+                    {% if game.safe_revealed|length == (game.grid_size - game.mines) %}
+                      <i class="bi bi-trophy-fill text-warning"></i>
+                    {% else %}
+                      <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                    {% endif %}
+                  </div>
+                  <h3>Game Over!</h3>
+                  <p class="mb-4">
+                    {% if game.safe_revealed|length == (game.grid_size - game.mines) %}
+                      🎉 Congratulations! You successfully avoided all mines!
+                    {% else %}
+                      💥 You hit a mine! Better luck next time in the minefield!
+                    {% endif %}
+                  </p>
+                  <a href="{{ url_for('mines', reset='true') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-arrow-clockwise"></i> Play Again
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
+
+  <footer class="bg-dark text-white text-center py-3 mt-5">
+    <p>&copy; 2025 Online Arcade. All rights reserved.</p>
+  </footer>
 </body>
 </html>
