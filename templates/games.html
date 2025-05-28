@@ -26,7 +26,7 @@
 <body>
   {% include 'navbar.html' %}
 
-  <div class="container mt-4">
+  <div class="container mt-5 pt-5">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -58,7 +58,7 @@
                   <img src="{{ url_for('static', filename='images/avatars/blackjack.jpg') }}" 
                        alt="Blackjack"
                        class="img-fluid mb-3" 
-                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                       style="height: 180px; width: 100%; object-fit: contain; border-radius: 10px;">
                   <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Blackjack</h4>
                 </div>
               </a>
@@ -70,7 +70,7 @@
                   <img src="{{ url_for('static', filename='images/avatars/mines.jpg') }}" 
                        alt="Mines"
                        class="img-fluid mb-3" 
-                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                       style="height: 180px; width: 100%; object-fit: contain; border-radius: 10px;">
                   <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Mines</h4>
                 </div>
               </a>
@@ -82,7 +82,7 @@
                   <img src="{{ url_for('static', filename='images/avatars/slots.jpg') }}" 
                        alt="Slots"
                        class="img-fluid mb-3" 
-                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                       style="height: 180px; width: 100%; object-fit: contain; border-radius: 10px;">
                   <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Slots</h4>
                 </div>
               </a>
@@ -94,7 +94,7 @@
                   <img src="{{ url_for('static', filename='images/avatars/plinko.jpg') }}" 
                        alt="Plinko"
                        class="img-fluid mb-3" 
-                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                       style="height: 180px; width: 100%; object-fit: contain; border-radius: 10px;">
                   <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Plinko</h4>
                 </div>
               </a>
@@ -106,7 +106,7 @@
                   <img src="{{ url_for('static', filename='images/avatars/balloon_rise.jpg') }}" 
                        alt="balloon_rise"
                        class="img-fluid mb-3" 
-                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                       style="height: 180px; width: 100%; object-fit: contain; border-radius: 10px;">
                   <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Balloon Rise</h4>
                 </div>
               </a>
@@ -118,7 +118,7 @@
                   <img src="{{ url_for('static', filename='images/avatars/ladder_climb.jpg') }}" 
                        alt="ladder_climb"
                        class="img-fluid mb-3" 
-                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                       style="height: 180px; width: 100%; object-fit: contain; border-radius: 10px;">
                   <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Ladder Climb</h4>
                 </div>
               </a>
