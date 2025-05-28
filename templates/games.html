@@ -12,7 +12,7 @@
       });
   </script>
   {% endif %}
-  <script src="/js/theme-init.js"></script>
+  <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Arcade Games</title>
@@ -20,11 +20,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <style>
-    .game-card img {
-      height: 220px !important;
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ladder.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
@@ -34,53 +30,107 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
+                <div class="custom-flash alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-stars me-2"></i> {{ message|safe }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-controller"></i> Choose a Game</h5>
-      </div>
-      <div class="card-body">
-        <div class="game-grid">
-          <a href="{{ url_for('blackjack') }}" class="game-card">
-            <img src="{{ url_for('static', filename='images/avatars/blackjack.jpg') }}" alt="Blackjack">
-            <h3>Blackjack</h3>
-          </a>
+    <div class="game-container">
+      <div class="game-card">
+        <div class="start-game-form">
+          <div class="welcome-content text-center mb-4">
+            <div class="welcome-icon">
+              <i class="bi bi-controller"></i>
+            </div>
+            <h2>Choose a Game</h2>
+            <div class="welcome-description">
+              Select from our collection of exciting arcade games
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 col-lg-4 mb-4">
+              <a href="{{ url_for('blackjack') }}" class="text-decoration-none">
+                <div class="form-group text-center p-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; height: 100%; transition: all 0.3s ease;">
+                  <img src="{{ url_for('static', filename='images/avatars/blackjack.jpg') }}" 
+                       alt="Blackjack"
+                       class="img-fluid mb-3" 
+                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                  <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Blackjack</h4>
+                </div>
+              </a>
+            </div>
 
-          <a href="{{ url_for('mines') }}" class="game-card">
-            <img src="{{ url_for('static', filename='images/avatars/mines.jpg') }}" alt="Mines">
-            <h3>Mines</h3>
-          </a>
+            <div class="col-md-6 col-lg-4 mb-4">
+              <a href="{{ url_for('mines') }}" class="text-decoration-none">
+                <div class="form-group text-center p-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; height: 100%; transition: all 0.3s ease;">
+                  <img src="{{ url_for('static', filename='images/avatars/mines.jpg') }}" 
+                       alt="Mines"
+                       class="img-fluid mb-3" 
+                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                  <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Mines</h4>
+                </div>
+              </a>
+            </div>
 
-          <a href="{{ url_for('slots_animated') }}" class="game-card">
-            <img src="{{ url_for('static', filename='images/avatars/slots.jpg') }}" alt="Slots">
-            <h3>Slots</h3>
-          </a>
-          
-          <a href="{{ url_for('plinko') }}" class="game-card">
-            <img src="{{ url_for('static', filename='images/avatars/plinko.jpg') }}" alt="Plinko">
-            <h3>Plinko</h3>
-          </a>
-          
-          <a href="{{ url_for('balloon_rise') }}" class="game-card">
-            <img src="{{ url_for('static', filename='images/avatars/balloon_rise.jpg') }}" alt="balloon_rise">
-            <h3>Balloon Rise</h3>
-          </a>
-          
-          <a href="{{ url_for('ladder_climb') }}" class="game-card">
-            <img src="{{ url_for('static', filename='images/avatars/ladder_climb.jpg') }}" alt="ladder_climb">
-            <h3>Ladder Climb</h3>
-          </a>
+            <div class="col-md-6 col-lg-4 mb-4">
+              <a href="{{ url_for('slots_animated') }}" class="text-decoration-none">
+                <div class="form-group text-center p-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; height: 100%; transition: all 0.3s ease;">
+                  <img src="{{ url_for('static', filename='images/avatars/slots.jpg') }}" 
+                       alt="Slots"
+                       class="img-fluid mb-3" 
+                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                  <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Slots</h4>
+                </div>
+              </a>
+            </div>
+            
+            <div class="col-md-6 col-lg-4 mb-4">
+              <a href="{{ url_for('plinko') }}" class="text-decoration-none">
+                <div class="form-group text-center p-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; height: 100%; transition: all 0.3s ease;">
+                  <img src="{{ url_for('static', filename='images/avatars/plinko.jpg') }}" 
+                       alt="Plinko"
+                       class="img-fluid mb-3" 
+                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                  <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Plinko</h4>
+                </div>
+              </a>
+            </div>
+            
+            <div class="col-md-6 col-lg-4 mb-4">
+              <a href="{{ url_for('balloon_rise') }}" class="text-decoration-none">
+                <div class="form-group text-center p-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; height: 100%; transition: all 0.3s ease;">
+                  <img src="{{ url_for('static', filename='images/avatars/balloon_rise.jpg') }}" 
+                       alt="balloon_rise"
+                       class="img-fluid mb-3" 
+                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                  <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Balloon Rise</h4>
+                </div>
+              </a>
+            </div>
+            
+            <div class="col-md-6 col-lg-4 mb-4">
+              <a href="{{ url_for('ladder_climb') }}" class="text-decoration-none">
+                <div class="form-group text-center p-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; height: 100%; transition: all 0.3s ease;">
+                  <img src="{{ url_for('static', filename='images/avatars/ladder_climb.jpg') }}" 
+                       alt="ladder_climb"
+                       class="img-fluid mb-3" 
+                       style="height: 180px; width: 100%; object-fit: cover; border-radius: 10px;">
+                  <h4 style="color: rgba(255,255,255,0.95); margin: 0;">Ladder Climb</h4>
+                </div>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <footer class="bg-dark text-white text-center py-3 mt-5">
-    <p>&copy; 2025 Online Arcade. All rights reserved.</p>
+  <footer class="mt-5 py-4 text-center" style="background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.1);">
+    <p style="color: rgba(255,255,255,0.7); margin: 0;">&copy; 2025 Online Arcade. All rights reserved.</p>
   </footer>
 
   <script>
@@ -131,6 +181,21 @@
             document.querySelectorAll('input[name="theme"]').forEach(function(radio) {
                 radio.addEventListener('change', function() {
                     applyTheme(this.value);
+                });
+            });
+            
+            // Add hover effects to game cards
+            document.querySelectorAll('.form-group').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 10px 25px rgba(255, 215, 0, 0.2)';
+                    this.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                    this.style.borderColor = 'rgba(255,255,255,0.1)';
                 });
             });
         });
