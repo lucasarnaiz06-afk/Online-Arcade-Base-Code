@@ -1,4 +1,5 @@
 /* plinko.css */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
 .plinko-container {
     max-width: 700px;
@@ -6,7 +7,7 @@
     padding: 20px;
     background-color: #121212;
     color: white;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Orbitron', monospace;
     border-radius: 10px;
     box-shadow: 0 0 15px rgba(0, 255, 100, 0.3);
   }
@@ -16,6 +17,8 @@
     margin-bottom: 10px;
     font-size: 32px;
     color: #00ff88;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
   }
   
   #plinko-canvas-container {
@@ -32,6 +35,7 @@
     margin-top: 20px;
     font-size: 18px;
     font-weight: bold;
+    font-family: 'Orbitron', monospace;
   }
   
   .result-message.win {
@@ -50,6 +54,8 @@
     background-color: #28a745;
     color: white;
     font-size: 1.25rem;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
     padding: 10px 20px;
     border: none;
     border-radius: 12px;
@@ -67,8 +73,28 @@
     transform: scale(0.95);
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
   }
+
+  #auto-drop-button {
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+  }
   
   input[type="hidden"] {
     display: none;
   }
-  
+
+  /* Additional elements that might use text */
+  .plinko-container input,
+  .plinko-container select,
+  .plinko-container button,
+  .plinko-container label {
+    font-family: 'Orbitron', monospace;
+  }
+
+  /* Balance display and other game text */
+  .plinko-container .balance-display,
+  .plinko-container .bet-display,
+  .plinko-container .game-text {
+    font-family: 'Orbitron', monospace;
+    font-weight: 400;
+  }
